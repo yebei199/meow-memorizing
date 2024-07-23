@@ -26,13 +26,13 @@ function replaceReady(word:string) {
   replacementDiv.textContent = replacementDivContent;
   replacementDiv.className=`${targetWord}`
   replacementDiv.style.display = "inline-block";
-  replacementDiv.style.position = "relative"; // 或 "absolute", "fixed", 根据你的需求选择
-  replacementDiv.style.zIndex = "2"; // 设置一个较高的z-index值以确保它显示在其他元素之上
+  // replacementDiv.style.position = "relative"; // 或 "absolute", "fixed", 根据你的需求选择
+  // replacementDiv.style.zIndex = "2"; // 设置一个较高的z-index值以确保它显示在其他元素之上
 
 
   walk(document.body);
 
-  function walk(node) {
+  function walk(node:Node) {
     let child, next;
 
     switch (node.nodeType) {
@@ -52,21 +52,22 @@ function replaceReady(word:string) {
     }
   }
 
-  function handleText(textNode) {
+
+  function handleText(textNode:Node) {
     const regex = new RegExp(targetWord, 'g');
     const parent = textNode.parentNode;
 
-    if (regex.test(textNode.nodeValue)) {
-      const parts = textNode.nodeValue.split(targetWord);
-      parts.forEach((part, index) => {
+    if (regex.test(textNode.nodeValue!)) {
+      const parts = textNode.nodeValue?.split(targetWord);
+      parts?.forEach((part: string, index: number) => {
         if (index > 0) {
-          // 插入替换的 div
-          parent.appendChild(replacementDiv.cloneNode(true));
+          // 插入替换的 元素
+          parent?.appendChild(replacementDiv.cloneNode(true));
         }
         // 插入原始文本的一部分
-        parent.appendChild(document.createTextNode(part));
+        parent?.appendChild(document.createTextNode(part));
       });
-      parent.removeChild(textNode);
+      parent?.removeChild(textNode);
     }
   }
 }
@@ -74,5 +75,4 @@ function replaceReady(word:string) {
 
 
 
-// 遍历页面中的所有文本节点
 
