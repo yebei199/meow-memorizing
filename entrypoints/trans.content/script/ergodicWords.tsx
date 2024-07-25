@@ -1,13 +1,29 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import TransLine from './TransLine.tsx'
+import { IALlWordsStorage } from '@/src/wxtStore.ts'
+import { getWordsList } from '@/entrypoints/trans.content/script/storageAction.ts'
 
-export default function main() {
-  const targetWord: string[] = ['you', 'is']
-  const R1 = new ReplaceMain(targetWord)
+/*
+ * 遍历DOM树，替换目标单词
+ */
+export default async function ergodicWords() {
+  //筛选
+  const wordsList = await getWordsList()
+  if (!wordsList) return
+
+  const delWords: IALlWordsStorage = {}
+  for (let i in wordsList) {
+    if (wordsList[i].isDeleted) {
+      delWords[i] = wordsList[i]
+    }
+  }
+  const wordsListStr = Object.keys(wordsList)
+  const delWordsListStr = Object.keys(delWords)
+  const R1 = new ReplaceMain(wordsListStr)
   R1.walk()
 
-  for (let i of targetWord) {
+  for (let i of wordsListStr) {
     const list1 = document.getElementsByClassName(
       R1.classNamePrefix + i
     )
@@ -15,11 +31,35 @@ export default function main() {
     for (let i2 of list1) {
       id = i2.toString() + '1'
       const root = ReactDOM.createRoot(i2 as HTMLLIElement)
-      root.render(<TransLine word={i} key={id} />)
+
+      if (delWordsListStr.includes(i)) {
+        root.render(
+          <span>
+            {' '}
+            <span> {i} </span>{' '}
+          </span>
+        )
+      } else {
+        root.render(
+          <span>
+            {' '}
+            <TransLine word={i} key={id} />{' '}
+          </span>
+        )
+      }
     }
   }
 }
 
+/*
+ * @description 替换的操作类
+ * 1. 遍历DOM树，找到目标单词
+ * 2. 替换目标单词
+ * 3. 添加className，防止重复
+ *
+ * @param targetWordList 目标单词列表
+ * @example new ReplaceMain(['hello', 'world']).walk()
+ */
 class ReplaceMain {
   public readonly classNamePrefix: string = 'w%3@D'
 

@@ -21,12 +21,18 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      '@types/webextension-polyfill':
+        specifier: ^0.10.7
+        version: 0.10.7
       '@unocss/postcss':
         specifier: ^0.61.5
         version: 0.61.5(postcss@8.4.39)
       '@webext-core/messaging':
         specifier: ^1.4.0
         version: 1.4.0
+      '@webext-core/storage':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@wxt-dev/module-react':
         specifier: ^1.1.0
         version: 1.1.0(vite@5.3.4(@types/node@20.14.11))(wxt@0.18.15(@types/node@20.14.11)(rollup@4.19.0))
@@ -45,6 +51,9 @@ importers:
       unocss:
         specifier: ^0.61.5
         version: 0.61.5(postcss@8.4.39)(rollup@4.19.0)(vite@5.3.4(@types/node@20.14.11))
+      webextension-polyfill:
+        specifier: ^0.12.0
+        version: 0.12.0
       wxt:
         specifier: ^0.18.15
         version: 0.18.15(@types/node@20.14.11)(rollup@4.19.0)
@@ -815,6 +824,9 @@ packages:
 
   '@webext-core/messaging@1.4.0':
     resolution: {integrity: sha512-gzXQ13HfKR3Yrn9TnrvTC/5seA7uPFvaqxqNFBsFOOdSZa5LyXt58Rhym8BYXarkWUGp+fh8f6AYM3RYuNbS+A==}
+
+  '@webext-core/storage@1.2.0':
+    resolution: {integrity: sha512-XI86HJUhugVdAQZLcj3EH/rZv08ByVn2riX3YI4HCJ86NOH5K3OwGi0ClFa/kq5U5hIVDMG6hwOBwgEgI2G5GQ==}
 
   '@wxt-dev/module-react@1.1.0':
     resolution: {integrity: sha512-oR82AsBxIGB6nFAlv6F9Ne5pzV7ZXrBlZv+4fHq3X5xCF5/ckyr5heGAx6uM8OtURVxbfU5ikV9LHaV3Zt5Whg==}
@@ -2503,6 +2515,9 @@ packages:
   webextension-polyfill@0.10.0:
     resolution: {integrity: sha512-c5s35LgVa5tFaHhrZDnr3FpQpjj1BB+RXhLTYUxGqBVN460HkbM8TBtEqdXWbpTKfzwCcjAZVF7zXCYSKtcp9g==}
 
+  webextension-polyfill@0.12.0:
+    resolution: {integrity: sha512-97TBmpoWJEE+3nFBQ4VocyCdLKfw54rFaJ6EVQYLBCXqCIpLSZkwGgASpv4oPt9gdKCJ80RJlcmNzNn008Ag6Q==}
+
   webpack-sources@3.2.3:
     resolution: {integrity: sha512-/DyMEOrDgLKKIG0fmvtz+4dUX/3Ghozwgm6iPp8KRhvn+eQf9+Q7GWxVNMk3+uCPWfdXYC4ExGBckIXdFEfH1w==}
     engines: {node: '>=10.13.0'}
@@ -3371,6 +3386,10 @@ snapshots:
   '@webext-core/messaging@1.4.0':
     dependencies:
       serialize-error: 11.0.3
+      webextension-polyfill: 0.10.0
+
+  '@webext-core/storage@1.2.0':
+    dependencies:
       webextension-polyfill: 0.10.0
 
   '@wxt-dev/module-react@1.1.0(vite@5.3.4(@types/node@20.14.11))(wxt@0.18.15(@types/node@20.14.11)(rollup@4.19.0))':
@@ -5147,6 +5166,8 @@ snapshots:
       - utf-8-validate
 
   webextension-polyfill@0.10.0: {}
+
+  webextension-polyfill@0.12.0: {}
 
   webpack-sources@3.2.3: {}
 

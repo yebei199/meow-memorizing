@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { onMessage } from '@/src/messaging.ts'
+import { onMessage } from '@/src/wxtMessaging.ts'
 
 export default defineBackground({
   // Set manifest options
