@@ -33,19 +33,9 @@ export default async function ergodicWords() {
       const root = ReactDOM.createRoot(i2 as HTMLLIElement)
 
       if (delWordsListStr.includes(i)) {
-        root.render(
-          <span>
-            {' '}
-            <span> {i} </span>{' '}
-          </span>
-        )
+        root.render(<span> {i} </span>)
       } else {
-        root.render(
-          <span>
-            {' '}
-            <TransLine word={i} key={id} />{' '}
-          </span>
-        )
+        root.render(<TransLine word={i} key={id} />)
       }
     }
   }
@@ -129,6 +119,7 @@ class ReplaceMain {
       // 遍历单词列表并替换目标单词
       if (intersect1.has(originWord)) {
         parent.appendChild(spanObj[originWord])
+        parent.appendChild(document.createTextNode(' '))
       } else {
         parent.appendChild(
           document.createTextNode(' ' + originWord + ' ')

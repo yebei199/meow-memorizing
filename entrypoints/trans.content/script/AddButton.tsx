@@ -56,7 +56,7 @@ export function selectListen() {
       await addQueriedWord(pureWord)
       const wordsList = await getWordsList()
       console.log(wordsList)
-      ergodicWords(wordsList!)
+      await ergodicWords()
     }
   )
 }
@@ -66,6 +66,7 @@ async function addQueriedWord(word: string) {
     await queryWord(word)
   if (word1) {
     word1.queryTimes += 1
+    word1.isDeleted = false
     await addWordLocal(word1)
   } else {
     const wordNew: IWordStorage = {

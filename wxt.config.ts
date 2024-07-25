@@ -4,13 +4,12 @@ import { defineConfig } from 'wxt'
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    name: 'Trending Typescript',
+    name: 'Meow-translate',
+    version: '0.1',
     permissions: [
       'tabs',
       'storage',
-      '<all_urls>',
       'activeTab',
-      'dns',
     ],
   },
   runner: {

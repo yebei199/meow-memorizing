@@ -1,9 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ContentScriptContext } from 'wxt/client'
-import ergodicWords from './script/ergodicWords.tsx'
 import '@/entrypoints/global.css'
-import { selectListen } from './script/AddButton.tsx'
 import startTrans from '@/entrypoints/trans.content/script/startTrans.ts'
 
 export default defineContentScript({
@@ -13,7 +11,7 @@ export default defineContentScript({
   async main(ctx) {
     // const ui = await createUi(ctx)
     // ui.mount()
-    startTrans()
+    await startTrans()
   },
 })
 

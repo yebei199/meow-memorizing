@@ -48,18 +48,19 @@ function T2({ word }: { word: string }) {
     <span
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      style={{
+        color: 'black',
+      }}
     >
       <span
         className={classNames(
           'font-mono bg-blue-200/80 z--1 ',
           'underline underline-purple underline-auto',
           'text-center border border-black',
-          'hover:bg-amber'
+          'hover:bg-amber '
         )}
       >
-        <span> </span>
         {word}
-        <span> </span>
       </span>
       {isHovered && <HoverTooltip word={word} />}
     </span>
@@ -121,7 +122,7 @@ function HoverTooltip({ word }: { word: string }) {
       <div
         className={classNames(
           'border-( radius-12 ) font-mono',
-          'w-60 h-auto',
+          'w-60 h-auto ',
           'rounded-lg backdrop-blur-5 bg-blue-300/55 p-4'
         )}
       >
