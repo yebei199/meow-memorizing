@@ -11,7 +11,7 @@ export default defineContentScript({
   async main(ctx) {
     // const ui = await createUi(ctx)
     // ui.mount()
-    await startTrans()
+    startTrans().catch(console.error)
   },
 })
 

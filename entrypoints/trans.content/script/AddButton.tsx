@@ -27,7 +27,7 @@ export function AddButton({ textSelected }: ITextSelected) {
   )
 }
 
-export function selectListen() {
+export async function selectListen() {
   document.addEventListener(
     'mouseup',
     async function (event) {

@@ -1,5 +1,5 @@
 import { defineExtensionStorage } from '@webext-core/storage'
-import browser from 'webextension-polyfill'
+import { browser } from 'wxt/browser'
 
 export interface IWordStorage {
   word: string

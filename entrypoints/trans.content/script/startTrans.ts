@@ -7,7 +7,7 @@ export default async function startTrans() {
   const wordsList: IALlWordsStorage | null =
     await getWordsList()
 
-  selectListen()
+  selectListen().catch(console.error)
 
   ergodicWords().catch(console.error)
 }
