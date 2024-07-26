@@ -54,9 +54,8 @@ function T2({ word }: { word: string }) {
     >
       <span
         className={classNames(
-          'font-mono bg-blue-200/80 z--1 ',
-          'underline underline-purple underline-auto',
-          'text-center border border-black',
+          'font-mono rounded-sm',
+          'text-center border bg-yellow-100 text-black border-black',
           'hover:bg-amber '
         )}
       >
@@ -118,11 +117,11 @@ function HoverTooltip({ word }: { word: string }) {
     }
   }
   return (
-    <div className="h-500 pos-absolute  z-200">
+    <div className=" pos-absolute  z-200">
       <div
         className={classNames(
           'border-( radius-12 ) font-mono',
-          'w-60 h-auto ',
+          'w-90 h-auto ',
           'rounded-lg backdrop-blur-5 bg-blue-300/55 p-4'
         )}
       >
@@ -135,11 +134,12 @@ function HoverTooltip({ word }: { word: string }) {
         <hr className={'bg-blue-7'} />
         <span>
           查询次数:
-          <p className="break-words">
+          <p className="inline break-words">
             {wordLocalInfoOuter?.queryTimes}
           </p>
+          <br />
           <button
-            className={'inline inline-block bg-blue-300/55'}
+            className={' bg-blue-200/55 rounded-sm'}
             onClick={deleteWord}
           >
             删除

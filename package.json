@@ -2,7 +2,7 @@
   "name": "wxt-starter",
   "description": "manifest.json description",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -21,7 +21,6 @@
   "devDependencies": {
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@types/webextension-polyfill": "^0.10.7",
     "@unocss/postcss": "^0.61.5",
     "@webext-core/messaging": "^1.4.0",
     "@webext-core/storage": "^1.2.0",
@@ -31,7 +30,6 @@
     "prettier": "^3.3.3",
     "typescript": "^5.5.3",
     "unocss": "^0.61.5",
-    "webextension-polyfill": "^0.12.0",
-    "wxt": "^0.18.15"
+    "wxt": "^0.19.0"
   }
 }
