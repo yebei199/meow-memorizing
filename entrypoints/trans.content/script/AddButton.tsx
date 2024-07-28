@@ -6,21 +6,6 @@ import {
   queryWord,
 } from './storageAction.ts'
 
-// interface ITextSelected {
-//   textSelected: string
-// }
-// export function AddButton({ textSelected }: ITextSelected) {
-//   const [isHover, setIsHover] = useState<boolean>(false)
-//   return (
-//     <span
-//       onMouseEnter={() => setIsHover(true)}
-//       onMouseLeave={() => setIsHover(false)}
-//     >
-//       {textSelected}
-//     </span>
-//   )
-// }
-
 export async function selectListen() {
   document.addEventListener('mouseup', async () => {
     // 获取当前选中的文本
