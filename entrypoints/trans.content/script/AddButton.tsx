@@ -41,8 +41,8 @@ export async function selectListen() {
       document.createElement('span')
     mySpan.textContent = pureWord
     // 使用deleteContents方法清空原范围的内容，并用<span>替换
-    // range.deleteContents()
-    // range.insertNode(mySpan)
+    range.deleteContents()
+    range.insertNode(mySpan)
 
     //--------
     await addQueriedWord(pureWord)
