@@ -2,7 +2,8 @@ import { defineConfig } from 'wxt'
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
-  modules: ['@wxt-dev/module-react'],
+  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
+  entrypointLoader: 'jiti',
   vite: () => ({
     ssr: {
       noExternal: [
@@ -15,12 +16,12 @@ export default defineConfig({
   extensionApi: 'chrome',
   manifest: {
     name: 'Meow-translate',
-    version: '0.1.2',
+    version: '0.1.3',
     permissions: ['tabs', 'storage', 'activeTab'],
   },
   runner: {
     startUrls: [
-      'https://wxt.dev/guide/go-further/vite.html#basic-vite-configuration',
+      'https://x.com/typescript/status/1816841709822837147',
     ],
   },
 })

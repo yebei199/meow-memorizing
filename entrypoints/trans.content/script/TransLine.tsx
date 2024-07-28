@@ -1,14 +1,21 @@
-import classNames from 'classnames'
-import axios from 'axios'
-import { useEffect, useState } from 'react'
+import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords.tsx'
 import { sendMessage } from '@/src/wxtMessaging.ts'
+import type { IWordStorage } from '@/src/wxtStore.ts'
+import { createPortal } from 'react-dom'
+
+import classNames from 'classnames'
+import type React from 'react'
+import {
+  type ReactElement,
+  useEffect,
+  useState,
+} from 'react'
+import ReactDOM from 'react-dom/client'
 import {
   addWordLocal,
-  getWordsList,
+  // getWordsList,
   queryWord,
 } from './storageAction.ts'
-import { IWordStorage } from '@/src/wxtStore.ts'
-import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords.tsx'
 
 /*
  * @description 对于每个单词的翻译准备以及鼠标悬停时显示额外内容的组件
@@ -36,14 +43,22 @@ export default function TransLine({
  */
 function T2({ word }: { word: string }) {
   const [isHovered, setIsHovered] = useState(false)
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    x: number
+    y: number
+  }>({ x: 0, y: 0 })
 
-  const handleMouseEnter = () => {
+  function handleMouseEnter(
+    event: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+  ): void {
+    setTooltipPosition({ x: event.pageX, y: event.pageY })
     setIsHovered(true)
   }
 
   const handleMouseLeave = () => {
     setIsHovered(false)
   }
+
   return (
     <span
       onMouseEnter={handleMouseEnter}
@@ -56,12 +71,20 @@ function T2({ word }: { word: string }) {
         className={classNames(
           'font-mono rounded-sm',
           'text-center border bg-yellow-100 text-black border-black',
-          'hover:bg-amber '
+          'hover:bg-amber ',
         )}
       >
         {word}
+        <TooltipPortal isVisible={isHovered}>
+          {
+            <HoverTooltip
+              word={word}
+              x={tooltipPosition?.x}
+              y={tooltipPosition?.y}
+            />
+          }
+        </TooltipPortal>
       </span>
-      {isHovered && <HoverTooltip word={word} />}
     </span>
   )
 }
@@ -76,7 +99,11 @@ export interface IWordQuery {
  * @param word 单词
  * @example <HoverTooltip word={'hello'} />
  */
-function HoverTooltip({ word }: { word: string }) {
+function HoverTooltip({
+  word,
+  x,
+  y,
+}: { word: string; x: number; y: number }) {
   const word3 = word
   const [wordLocalInfoOuter, setWordLocalInfoOuter] =
     useState<IWordStorage>()
@@ -102,7 +129,29 @@ function HoverTooltip({ word }: { word: string }) {
     fetchData().catch(console.error)
 
     return () => {}
-  }, [])
+  }, [word3])
+  // 创建一个ref来存储要定位的DOM元素
+  const tooltipRef = useRef<HTMLDivElement>(null)
+
+  // useEffect(() => {
+  //   const handleMouseMove = () => {
+  //     // 更新鼠标位置状态
+  //
+  //     // 如果存在tooltipRef.current，则更新其位置
+  //     if (tooltipRef.current) {
+  //       // 注意：这里可能需要更复杂的逻辑来确保tooltip不会超出视口
+  //       const rect =
+  //         tooltipRef.current.getBoundingClientRect()
+  //       const style = tooltipRef.current.style
+  //       style.left = `${x - rect.width / 2}px` // 居中显示
+  //       style.top = `${y - rect.height}px` // 显示在鼠标下方
+  //       style.display = 'block' // 确保显示
+  //     }
+  //   }
+  //   handleMouseMove()
+  //
+  //   return () => {}
+  // }, [x, y, tooltipRef])
 
   async function deleteWord() {
     if (wordLocalInfoOuter) {
@@ -118,28 +167,36 @@ function HoverTooltip({ word }: { word: string }) {
   }
   return (
     <div
+      style={{
+        left: `${x - 70}px`,
+        top: `${y + 1}px`,
+        zIndex: 999, // 假设我们想要在鼠标下方稍微偏移一点
+      }}
       className={classNames(
-        ' pos-absolute  z-200',
+        'position-absolute top-5  overflow-auto z-999',
         'border-( radius-12 ) font-mono',
         'w-90 h-auto ',
-        'rounded-lg backdrop-blur-5 bg-blue-300/55 p-4'
+        'rounded-lg backdrop-blur-5 bg-blue-300/55 p-4',
       )}
     >
       {/* 这里是悬停时显示的额外内容 */}
-      <h1 className="text-center">{word}</h1>
+      <h1 className='text-center'>{word}</h1>
 
       <hr className={'bg-blue-7'} />
-      <p className="break-words">{dataEnd}</p>
+      <p className='break-words'>{dataEnd}</p>
 
       <hr className={'bg-blue-7'} />
       <span>
         查询次数:
-        <p className="inline break-words">
+        <p className='inline break-words'>
           {wordLocalInfoOuter?.queryTimes}
         </p>
         <br />
         <button
-          className={' bg-blue-200/55 rounded-sm'}
+          type='button' // 添加了显式的type属性
+          className={
+            'bg-blue-200/55 rounded-sm border border-pink'
+          }
           onClick={deleteWord}
         >
           删除
@@ -156,7 +213,7 @@ function parseBingDict(htmlString: string) {
   const parser = new DOMParser()
   const doc = parser.parseFromString(
     htmlString,
-    'text/html'
+    'text/html',
   )
 
   const element = doc
@@ -168,4 +225,17 @@ function parseBingDict(htmlString: string) {
   }
 
   return element
+}
+
+// 创建一个 Portal 组件
+export const TooltipPortal = ({
+  children,
+  isVisible,
+}: { children: ReactElement; isVisible: boolean }) => {
+  if (!isVisible) return null
+
+  return createPortal(
+    children,
+    document.body, // 或者任何其他的 DOM 元素
+  )
 }

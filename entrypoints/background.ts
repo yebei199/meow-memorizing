@@ -1,23 +1,25 @@
-import axios from 'axios'
 import { onMessage } from '@/src/wxtMessaging.ts'
+import axios from 'axios'
 
 export default defineBackground({
   // Set manifest options
   persistent: true,
   main() {
-    onMessage('trans', async message => {
-      return await getData(message.data.word)
-    })
+    onMessage(
+      'trans',
+      async (message: { data: { word: string } }) => {
+        const queryWord = message.data.word
+        try {
+          const response = await axios.get(
+            `https://cn.bing.com/dict/clientsearch?mkt=zh-CN&setLang=zh&form=BDVEHC&ClientVer=BDDTV3.5.1.4320&q=${queryWord}`,
+            { responseType: 'text' }, // 添加 responseType 选项
+          )
+          return await response.data // 现在 response.data 的类型是 string
+        } catch (error) {
+          console.error('Axios Error:', error)
+          throw error
+        }
+      },
+    )
   },
 })
-async function getData(queryWord: string): Promise<any> {
-  try {
-    const response = await axios.get(
-      `https://cn.bing.com/dict/clientsearch?mkt=zh-CN&setLang=zh&form=BDVEHC&ClientVer=BDDTV3.5.1.4320&q=${queryWord}`
-    )
-    return response.data // 假设这是您从 axios.get 得到的 HTML 字符串
-  } catch (error) {
-    console.error('Axios Error:', error)
-    throw error
-  }
-}

@@ -1,8 +1,8 @@
+import { getWordsList } from '@/entrypoints/trans.content/script/storageAction.ts'
+import type { IALlWordsStorage } from '@/src/wxtStore.ts'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import TransLine from './TransLine.tsx'
-import { IALlWordsStorage } from '@/src/wxtStore.ts'
-import { getWordsList } from '@/entrypoints/trans.content/script/storageAction.ts'
 
 /*
  * 遍历DOM树，替换目标单词
@@ -13,7 +13,7 @@ export default async function ergodicWords() {
   if (!wordsList) return
 
   const delWords: IALlWordsStorage = {}
-  for (let i in wordsList) {
+  for (const i in wordsList) {
     if (wordsList[i].isDeleted) {
       delWords[i] = wordsList[i]
     }
@@ -23,14 +23,14 @@ export default async function ergodicWords() {
   const R1 = new ReplaceMain(wordsListStr)
   R1.walk()
 
-  for (let i of wordsListStr) {
+  for (const i of wordsListStr) {
     const list1 = document.getElementsByClassName(
-      R1.classNamePrefix + i
+      R1.classNamePrefix + i,
     )
     let id = ''
-    for (let i2 of list1) {
-      id = i2.toString() + '1'
-      const root = ReactDOM.createRoot(i2 as HTMLLIElement)
+    for (const i2 of list1) {
+      id = `${i2.toString()}1`
+      const root = ReactDOM.createRoot(i2)
 
       if (delWordsListStr.includes(i)) {
         root.render(<span> {i} </span>)
@@ -65,7 +65,8 @@ class ReplaceMain {
   }
 
   public walk(node: Node = this.startNode) {
-    let child, next
+    let child: Node | null
+    let next: Node | null
 
     switch (node.nodeType) {
       case 1: // Element
@@ -90,7 +91,7 @@ class ReplaceMain {
       return
     }
 
-    const parent = textNode.parentNode!
+    const parent = textNode.parentNode
     // 判断父节点是否已经替换过
     if (parent instanceof Element) {
       if (parent.className.includes(this.classNamePrefix)) {
@@ -104,37 +105,38 @@ class ReplaceMain {
 
     const intersect1 =
       this.targetWordSet.intersection(uniqueWords)
+
     // 如果没有匹配到目标单词，则直接跳过
     if (intersect1.size === 0) {
       return
     }
 
     const spanObj: { [key: string]: HTMLSpanElement } = {}
-    for (let interWord of intersect1) {
+    for (const interWord of intersect1) {
       spanObj[interWord] =
         this.createReplacementSpan(interWord)
     }
 
-    for (let originWord of wordsList) {
+    for (const originWord of wordsList) {
       // 遍历单词列表并替换目标单词
       if (intersect1.has(originWord)) {
-        parent.appendChild(spanObj[originWord])
-        parent.appendChild(document.createTextNode(' '))
+        parent?.appendChild(spanObj[originWord])
+        parent?.appendChild(document.createTextNode(' '))
       } else {
-        parent.appendChild(
-          document.createTextNode(' ' + originWord + ' ')
+        parent?.appendChild(
+          document.createTextNode(` ${originWord} `),
         )
       }
     }
-    parent.removeChild(textNode) // 移除原始文本节点
+    parent?.removeChild(textNode) // 移除原始文本节点
   }
   public createReplacementSpan(
-    targetWord: string
+    targetWord: string,
   ): HTMLSpanElement {
     const replacementSpan = document.createElement('span')
     replacementSpan.classList.add(this.classNamePrefix)
     replacementSpan.classList.add(
-      this.classNamePrefix + targetWord
+      this.classNamePrefix + targetWord,
     )
     replacementSpan.style.display = 'inline-block'
     return replacementSpan
