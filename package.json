@@ -29,9 +29,8 @@
     "@wxt-dev/module-react": "^1.1.0",
     "axios": "^1.7.2",
     "classnames": "^2.5.1",
-    "prettier": "^3.3.3",
     "typescript": "^5.5.4",
     "unocss": "^0.61.5",
-    "wxt": "0.19.1"
+    "wxt": "^0.19.2"
   }
 }

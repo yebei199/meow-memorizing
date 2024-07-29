@@ -92,13 +92,14 @@ class ReplaceMain {
     }
 
     const parent = textNode.parentNode
+
     // 判断父节点是否已经替换过
-    if (parent instanceof Element) {
+    if (parent instanceof HTMLElement) {
       if (parent.className.includes(this.classNamePrefix)) {
-        console.log('skip')
         return
       }
     }
+
     // 文本节点内部文字
     const wordsList = text.split(' ') // 使用空格分词
     const uniqueWords = new Set(wordsList) // 转换为Set以去除重复项
