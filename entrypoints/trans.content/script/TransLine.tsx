@@ -70,7 +70,7 @@ function T2({ word }: { word: string }) {
       <span
         className={classNames(
           'font-mono rounded-sm',
-          'text-center border bg-yellow-100 text-black border-black',
+          'text-center border bg-blue-300/55 text-black border-black',
           'hover:bg-amber ',
         )}
       >
@@ -133,26 +133,6 @@ function HoverTooltip({
   // 创建一个ref来存储要定位的DOM元素
   const tooltipRef = useRef<HTMLDivElement>(null)
 
-  // useEffect(() => {
-  //   const handleMouseMove = () => {
-  //     // 更新鼠标位置状态
-  //
-  //     // 如果存在tooltipRef.current，则更新其位置
-  //     if (tooltipRef.current) {
-  //       // 注意：这里可能需要更复杂的逻辑来确保tooltip不会超出视口
-  //       const rect =
-  //         tooltipRef.current.getBoundingClientRect()
-  //       const style = tooltipRef.current.style
-  //       style.left = `${x - rect.width / 2}px` // 居中显示
-  //       style.top = `${y - rect.height}px` // 显示在鼠标下方
-  //       style.display = 'block' // 确保显示
-  //     }
-  //   }
-  //   handleMouseMove()
-  //
-  //   return () => {}
-  // }, [x, y, tooltipRef])
-
   async function deleteWord() {
     if (wordLocalInfoOuter) {
       // 复制对象以避免直接修改状态
@@ -175,7 +155,7 @@ function HoverTooltip({
       className={classNames(
         'position-absolute top-5  overflow-auto z-999',
         'border-( radius-12 ) font-mono',
-        'w-90 h-auto ',
+        'w-90 h-auto text-black',
         'rounded-lg backdrop-blur-5 bg-blue-300/55 p-4',
       )}
     >

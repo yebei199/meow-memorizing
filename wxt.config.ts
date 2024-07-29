@@ -3,7 +3,7 @@ import { defineConfig } from 'wxt'
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
-  entrypointLoader: 'jiti',
+  // entrypointLoader: 'jiti',
   vite: () => ({
     ssr: {
       noExternal: [
@@ -16,7 +16,7 @@ export default defineConfig({
   extensionApi: 'chrome',
   manifest: {
     name: 'Meow-translate',
-    version: '0.1.3',
+    version: '0.1.4',
     permissions: ['tabs', 'storage', 'activeTab'],
   },
   runner: {
