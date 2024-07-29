@@ -69,22 +69,22 @@ function T2({ word }: { word: string }) {
     >
       <span
         className={classNames(
-          'font-mono rounded-sm',
-          'text-center border bg-blue-300/55 text-black border-black',
+          'font-mono rounded-sm shadow-lg shadow-lightBlue',
+          'text-center border bg-lightBlue  text-black ',
           'hover:bg-amber ',
         )}
       >
         {word}
-        <TooltipPortal isVisible={isHovered}>
-          {
-            <HoverTooltip
-              word={word}
-              x={tooltipPosition?.x}
-              y={tooltipPosition?.y}
-            />
-          }
-        </TooltipPortal>
       </span>
+      <TooltipPortal isVisible={isHovered}>
+        {
+          <HoverTooltip
+            word={word}
+            x={tooltipPosition?.x}
+            y={tooltipPosition?.y}
+          />
+        }
+      </TooltipPortal>
     </span>
   )
 }
