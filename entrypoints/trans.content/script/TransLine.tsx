@@ -154,8 +154,8 @@ function HoverTooltip({
       }}
       className={classNames(
         'position-absolute top-5  overflow-auto z-999',
-        'border-( radius-12 ) font-mono',
-        'w-90 h-auto text-black',
+        'border-( radius-12 ) font-mono ',
+        'w-90 h-auto text-black  shadow-lg shadow-blue shadow-op-80',
         'rounded-lg backdrop-blur-5 bg-blue-300/55 p-4',
       )}
     >

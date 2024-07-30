@@ -21,7 +21,7 @@ export default defineConfig({
   },
   runner: {
     startUrls: [
-      'https://juejin.cn/post/7395201703085555722',
+      'https://wxt.dev/get-started/migrate-to-wxt.html',
     ],
   },
 })
