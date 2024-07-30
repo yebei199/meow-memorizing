@@ -65,72 +65,98 @@ class ReplaceMain {
   }
 
   public walk(node: Node = this.startNode) {
-    let child: Node | null
-    let next: Node | null
+    const stack: Node[] = [node]
+    while (stack.length > 0) {
+      const current = stack.pop()
+      if (!current) continue
 
-    switch (node.nodeType) {
-      case 1: // Element
-      case 9: // Document
-      case 11: // Document fragment
-        child = node.firstChild
-        while (child) {
-          next = child.nextSibling
-          this.walk(child)
-          child = next
+      try {
+        switch (current.nodeType) {
+          case 1: // Element
+          case 9: // Document
+          case 11: {
+            // Document fragment
+            let child = current.firstChild // 改为从第一个子节点开始
+            while (child) {
+              if ((child as Element).tagName !== 'CODE') {
+                stack.push(child)
+              }
+
+              child = child.nextSibling // 移动到下一个兄弟节点
+            }
+            break
+          }
+          case 3: // Text node
+            this.handleText(current as Text)
+            break
+          default:
+            break
         }
-        break
-      case 3: // Text node
-        this.handleText(node)
-        break
+      } catch (error) {
+        console.error(`Error walking the DOM: ${error}`)
+        // 根据需求决定是否要继续遍历或停止
+      }
     }
   }
-  private handleText(textNode: Node) {
-    // 跳过空文本节点
-    const text = textNode.nodeValue
-    if (text === null || text.trim().length === 0) {
+
+  private handleText(textNode: Text) {
+    if (!textNode) {
+      console.error('TextNode is null')
       return
     }
 
-    const parent = textNode.parentNode
-
-    // 判断父节点是否已经替换过
-    if (parent instanceof HTMLElement) {
-      if (parent.className.includes(this.classNamePrefix)) {
-        return
-      }
+    const text = textNode.nodeValue
+    if (!text || text.trim().length === 0) {
+      return
     }
 
-    // 文本节点内部文字
-    const wordsList = text.split(' ') // 使用空格分词
-    const uniqueWords = new Set(wordsList) // 转换为Set以去除重复项
+    const parent = textNode.parentNode as HTMLElement
 
+    if (parent?.classList.contains(this.classNamePrefix)) {
+      return
+    }
+
+    const wordsList = text.split(' ')
+    const uniqueWords = new Set(wordsList)
     const intersect1 =
       this.targetWordSet.intersection(uniqueWords)
 
-    // 如果没有匹配到目标单词，则直接跳过
     if (intersect1.size === 0) {
       return
     }
 
-    const spanObj: { [key: string]: HTMLSpanElement } = {}
-    for (const interWord of intersect1) {
-      spanObj[interWord] =
-        this.createReplacementSpan(interWord)
-    }
+    const fragment = document.createDocumentFragment()
+    let currentText = ''
 
     for (const originWord of wordsList) {
-      // 遍历单词列表并替换目标单词
       if (intersect1.has(originWord)) {
-        parent?.appendChild(spanObj[originWord])
-        parent?.appendChild(document.createTextNode(' '))
+        if (currentText !== '') {
+          fragment.appendChild(
+            document.createTextNode(currentText),
+          )
+          currentText = ''
+        }
+        const span = this.createReplacementSpan(originWord)
+        fragment.appendChild(span)
+        fragment.appendChild(document.createTextNode(' '))
       } else {
-        parent?.appendChild(
-          document.createTextNode(` ${originWord} `),
-        )
+        currentText += ` ${originWord} `
       }
     }
-    parent?.removeChild(textNode) // 移除原始文本节点
+
+    if (currentText !== '') {
+      fragment.appendChild(
+        document.createTextNode(currentText.trim()),
+      )
+    }
+
+    try {
+      parent?.replaceChild(fragment, textNode)
+    } catch (error) {
+      console.error('Error replacing child nodes:', error)
+    }
   }
+
   public createReplacementSpan(
     targetWord: string,
   ): HTMLSpanElement {

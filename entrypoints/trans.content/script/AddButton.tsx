@@ -1,10 +1,6 @@
 import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords.tsx'
 import type { IWordStorage } from '@/src/wxtStore.ts'
-import {
-  addWordLocal,
-  getWordsList,
-  queryWord,
-} from './storageAction.ts'
+import { addWordLocal, queryWord } from './storageAction.ts'
 
 export async function selectListen() {
   document.addEventListener('mouseup', async () => {
@@ -31,8 +27,8 @@ export async function selectListen() {
 
     //--------
     await addQueriedWord(pureWord)
-    const wordsList = await getWordsList()
-    console.log(wordsList)
+    // const wordsList = await getWordsList()
+    // console.log(wordsList)
     await ergodicWords()
   })
 }
