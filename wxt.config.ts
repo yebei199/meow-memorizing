@@ -16,12 +16,12 @@ export default defineConfig({
   extensionApi: 'chrome',
   manifest: {
     name: 'Meow-translate',
-    version: '0.1.4',
+    version: '0.1.5',
     permissions: ['tabs', 'storage', 'activeTab'],
   },
   runner: {
     startUrls: [
-      'https://x.com/typescript/status/1816841709822837147',
+      'https://juejin.cn/post/7395201703085555722',
     ],
   },
 })
