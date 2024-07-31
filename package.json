@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
-    "build": "wxt build",
+    "build": "wxt build && bun run copy.ts",
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
@@ -19,13 +19,15 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "fs-extra": "^11.2.0",
     "@biomejs/biome": "1.8.3",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@unocss/postcss": "^0.61.5",
     "@webext-core/messaging": "^1.4.0",
     "@webext-core/storage": "^1.2.0",
-    "@wxt-dev/auto-icons": "^1.0.0",
+    "@wxt-dev/auto-icons": "^1.0.1",
     "@wxt-dev/module-react": "^1.1.0",
     "axios": "^1.7.2",
     "classnames": "^2.5.1",
