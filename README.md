@@ -11,4 +11,4 @@ bun run build
 # 依赖
 - 框架: WXT + React
 - 格式化: biome
-- 包管理: bun啊啊啊啊是
+- 包管理: bun啊啊啊啊是s
