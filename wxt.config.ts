@@ -15,8 +15,8 @@ export default defineConfig({
   }),
   extensionApi: 'chrome',
   manifest: {
-    name: 'Meow-translate',
-    version: '0.1.5',
+    name: 'meow-memorizing',
+    version: '0.1.6',
     permissions: ['tabs', 'storage', 'activeTab'],
   },
   runner: {

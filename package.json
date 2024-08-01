@@ -1,9 +1,10 @@
 {
-  "name": "wxt-starter",
-  "description": "manifest.json description",
-  "private": true,
-  "version": "0.1.2",
+  "name": "meow-memorizing",
+  "description": "",
+  "private": false,
+  "version": "0.1.5",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
