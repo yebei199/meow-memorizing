@@ -150,12 +150,11 @@ function HoverTooltip({
       style={{
         left: `${x - 70}px`,
         top: `${y + 1}px`,
-        zIndex: 999, // 假设我们想要在鼠标下方稍微偏移一点
       }}
       className={classNames(
-        'position-absolute top-5  overflow-auto z-999',
-        'border-( radius-12 ) font-mono',
-        'w-90 h-auto text-black',
+        'position-absolute  overflow-auto z-99',
+        'border-( radius-12 ) font-mono ',
+        'w-90 h-auto text-black  shadow-lg shadow-blue shadow-op-80',
         'rounded-lg backdrop-blur-5 bg-blue-300/55 p-4',
       )}
     >
