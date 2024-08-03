@@ -139,6 +139,7 @@ function HoverTooltip({
       const updatedWordInfo = {
         ...wordLocalInfoOuter,
         isDeleted: true,
+        deleteTimes: wordLocalInfoOuter.deleteTimes + 1,
       }
       await addWordLocal(updatedWordInfo) // 假设这个函数会更新服务器或本地存储
       setWordLocalInfoOuter(updatedWordInfo) // 更新组件状态

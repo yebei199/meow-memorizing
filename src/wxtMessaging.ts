@@ -1,5 +1,5 @@
+import type { IWordQuery } from '@/entrypoints/trans.content/script/TransLine.tsx'
 import { defineExtensionMessaging } from '@webext-core/messaging'
-import { IWordQuery } from '@/entrypoints/trans.content/script/TransLine.tsx'
 
 interface ProtocolMap {
   trans(data: IWordQuery): string
