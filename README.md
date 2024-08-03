@@ -27,6 +27,7 @@ bun run build
 - 框架: WXT + React
 - 格式化: biome
 - 包管理: bun 
+- [版本日志](./docs/CHANGELOG.md)
 
 # 其他
 欢迎提交issue,提交pr,或者[聊天吹水](https://github.com/yebei199/meow-memorizing/discussions)
