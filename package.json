@@ -1,10 +1,10 @@
 {
   "name": "meow-memorizing",
-  "description": "",
+  "description": "一个背单词的浏览器扩展",
   "private": false,
-  "version": "0.1.5",
+  "version": "0.1.7",
   "type": "module",
-  "license": "MIT",
+  "license": "LGPL-3.0-only",
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
@@ -20,9 +20,8 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
-    "fs-extra": "^11.2.0",
     "@biomejs/biome": "1.8.3",
+    "@types/fs-extra": "^11.0.4",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@unocss/postcss": "^0.61.5",
@@ -32,8 +31,9 @@
     "@wxt-dev/module-react": "^1.1.0",
     "axios": "^1.7.2",
     "classnames": "^2.5.1",
+    "fs-extra": "^11.2.0",
     "typescript": "^5.5.4",
     "unocss": "^0.61.5",
-    "wxt": "^0.19.2"
+    "wxt": "^0.19.3"
   }
 }
