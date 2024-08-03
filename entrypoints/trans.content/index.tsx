@@ -1,4 +1,4 @@
-import '@/entrypoints/global.css'
+import '@/public/global.css'
 import startTrans from '@/entrypoints/trans.content/script/startTrans.ts'
 
 export default defineContentScript({
