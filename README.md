@@ -14,6 +14,7 @@
 # 使用方法如下
 
 ![example.gif](https://i.imgur.com/tdqxiJ7.gif)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_shield)
 
 ## 打包(已解压)
 
@@ -26,10 +27,13 @@ bun run build
 # 依赖
 - 框架: WXT + React
 - 格式化: biome
-- 包管理: bun 
+- 包管理: bun
 - [版本日志](./docs/CHANGELOG.md)
 
 # 其他
 欢迎提交issue,提交pr,或者[聊天吹水](https://github.com/yebei199/meow-memorizing/discussions)
 
-不上架谷歌商店,因为没法付开发者费用,要开国外信用卡太复杂了,放弃,大家就在这页面直接下载用吧
+不上架谷歌商店,因为没法付开发者费用,要开国外卡太复杂了,放弃,大家就在这页面直接下载用吧
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_large)
