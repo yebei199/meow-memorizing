@@ -15,9 +15,9 @@ export default defineConfig({
   }),
   extensionApi: 'chrome',
   manifest: {
-    name: 'meow-memorizing',
-    description: '记单词的小插件',
-    version: '0.1.7',
+    // name: 'meow-memorizing',
+    // description: '记单词的小插件',
+    // version: '0.1.7',
     permissions: ['tabs', 'storage', 'activeTab'],
   },
   runner: {

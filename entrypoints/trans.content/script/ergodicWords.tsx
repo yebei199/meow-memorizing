@@ -4,9 +4,11 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import TransLine from './TransLine.tsx'
 
-/*
- * 遍历DOM树，替换目标单词
- */
+/**
+  遍历DOM树，替换目标单词
+ @example await ergodicWords()
+ @returns void
+*/
 export default async function ergodicWords() {
   //筛选
   const wordsList = await getWordsList()
@@ -46,7 +48,6 @@ export default async function ergodicWords() {
  * 1. 遍历DOM树，找到目标单词
  * 2. 替换目标单词
  * 3. 添加className，防止重复
- *
  * @param targetWordList 目标单词列表
  * @example new ReplaceMain(['hello', 'world']).walk()
  */
