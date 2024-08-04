@@ -4,7 +4,7 @@
   "private": false,
   "version": "0.1.7",
   "type": "module",
-  "license": "LGPL-3.0-or-later",
+  "license": "LGPL-3.0-only",
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
