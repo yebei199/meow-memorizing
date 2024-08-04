@@ -5,4 +5,4 @@
 ### Machine setup
 1. Install [bun](https://bun.sh/)
 2. clone this repo
-3. end
+3. start
