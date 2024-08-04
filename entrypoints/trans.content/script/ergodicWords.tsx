@@ -4,8 +4,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import TransLine from './TransLine.tsx'
 
-/*
- 遍历DOM树，替换目标单词
+/**
+  遍历DOM树，替换目标单词
  @example await ergodicWords()
  @returns void
 */
