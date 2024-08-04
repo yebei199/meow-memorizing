@@ -2,7 +2,7 @@
   "name": "meow-memorizing",
   "description": "记单词的小插件",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "scripts": {
     "dev": "wxt",
