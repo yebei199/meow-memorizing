@@ -20,7 +20,6 @@
 # 使用方法如下
 
 ![example.gif](https://i.imgur.com/tdqxiJ7.gif)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_shield)
 
 ## 打包(已解压)
 
