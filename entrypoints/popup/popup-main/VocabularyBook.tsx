@@ -76,7 +76,7 @@ export interface IShowWord {
   deleteTimes: number
 }
 
-/*
+/**
  * ant table 单词列表的列接口
  */
 export interface IColumn {
