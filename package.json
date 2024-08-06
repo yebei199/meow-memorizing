@@ -26,7 +26,7 @@
     "@unocss/postcss": "^0.61.5",
     "@webext-core/messaging": "^1.4.0",
     "@webext-core/storage": "^1.2.0",
-    "@wxt-dev/auto-icons": "^1.0.1",
+    "@wxt-dev/auto-icons": "^1.0.2",
     "@wxt-dev/module-react": "^1.1.0",
     "antd": "^5.20.0",
     "axios": "^1.7.2",
