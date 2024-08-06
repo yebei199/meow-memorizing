@@ -50,6 +50,7 @@
       "biome lint --fix",
       "git add"
     ],
-    "bun.lockb": ["bun install", "git add bun.lockb"]
+    "bun.lockb": ["bun install", "git add bun.lockb"],
+    "package.json": ["bun install", "git add bun.lockb"]
   }
 }
