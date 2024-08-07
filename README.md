@@ -41,4 +41,10 @@ bun run build
 不上架谷歌商店,因为无法付开发者费用,大家就在github直接下载用吧
 
 ## License
+Code: (c) 2024 - Present - yebei199
+
+**License**: GPL-3.0-only
+
+**License Text**: [View License Text](LICENSE)
+
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_large)
