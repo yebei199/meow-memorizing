@@ -39,6 +39,7 @@ export async function selectListen() {
 async function addQueriedWord(word: string) {
   const word1: IWordStorage | undefined =
     await queryWord(word)
+
   if (word1) {
     word1.queryTimes += 1
     word1.isDeleted = false

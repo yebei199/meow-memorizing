@@ -1,5 +1,5 @@
 import { getWordsList } from '@/entrypoints/trans.content/script/storageAction.ts'
-import type { IALlWordsStorage } from '@/src/wxtStore.ts'
+import type { IAllWordsStorage } from '@/src/wxtStore.ts'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import TransLine from './TransLine.tsx'
@@ -14,7 +14,7 @@ export default async function ergodicWords() {
   const wordsList = await getWordsList()
   if (!wordsList) return
 
-  const delWords: IALlWordsStorage = {}
+  const delWords: IAllWordsStorage = {}
   for (const i in wordsList) {
     if (wordsList[i].isDeleted) {
       delWords[i] = wordsList[i]

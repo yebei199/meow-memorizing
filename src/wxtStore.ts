@@ -9,15 +9,22 @@ export interface IWordStorage {
   queryTimes: number
   deleteTimes: number
 }
-export interface IALlWordsStorage {
+export interface IAllWordsStorage {
   [key: string]: IWordStorage
 }
 
 export interface ExtensionStorageSchema {
-  myWords: IALlWordsStorage
+  myWords: IAllWordsStorage
 }
 
+// utils/storage.ts
+export const myWords = storage.defineItem<IAllWordsStorage>(
+  'sync:myWords',
+  {
+    fallback: {},
+  },
+)
 export const extensionStorage =
   defineExtensionStorage<ExtensionStorageSchema>(
-    browser.storage.local
+    browser.storage.sync,
   )

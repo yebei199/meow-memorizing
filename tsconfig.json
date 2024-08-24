@@ -5,5 +5,9 @@
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true
-  }
+  },
+  "include": [
+    "./src/**/*",
+    "./entrypoints/**/*"
+  ]
 }

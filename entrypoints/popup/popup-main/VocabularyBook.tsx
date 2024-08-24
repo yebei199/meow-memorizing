@@ -1,6 +1,6 @@
 import { getWordsList } from '@/entrypoints/trans.content/script/storageAction.ts'
 import type {
-  IALlWordsStorage,
+  IAllWordsStorage,
   IWordStorage,
 } from '@/src/wxtStore.ts'
 import type { TableColumnsType } from 'antd'
@@ -10,10 +10,10 @@ import { useEffect } from 'react'
 
 export const VocabularyBook = () => {
   console.log('VocabularyBook')
-  const defaultWords: IALlWordsStorage = {}
+  const defaultWords: IAllWordsStorage = {}
 
   const [words, setWords] =
-    useState<IALlWordsStorage>(defaultWords)
+    useState<IAllWordsStorage>(defaultWords)
 
   useEffect(() => {
     async function fetchWords() {
@@ -39,7 +39,7 @@ export const VocabularyBook = () => {
 
 function Sheet({
   wordsList,
-}: { wordsList: IALlWordsStorage }) {
+}: { wordsList: IAllWordsStorage }) {
   const [showWords, setShowWords] = useState<IShowWord[]>(
     [],
   )
