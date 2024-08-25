@@ -24,9 +24,8 @@ export async function getWordsList(): Promise<IAllWordsStorage> {
  */
 export async function queryWord(word: string) {
   try {
-    const wordsList: IAllWordsStorage | null =
-      await getWordsList()
-    return wordsList?.[word]
+    const wordsList: IAllWordsStorage = await getWordsList()
+    return wordsList[word]
   } catch (error) {
     console.error(error)
   }

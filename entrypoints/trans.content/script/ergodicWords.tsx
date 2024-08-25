@@ -11,8 +11,10 @@ import TransLine from './TransLine.tsx'
 */
 export default async function ergodicWords() {
   //筛选
-  const wordsList = await getWordsList()
-  if (!wordsList) return
+  const wordsList: IAllWordsStorage = await getWordsList()
+  console.log(wordsList)
+  const wordsListStr = Object.keys(wordsList)
+  if (wordsListStr.length === 0) return
 
   const delWords: IAllWordsStorage = {}
   for (const i in wordsList) {
@@ -20,8 +22,8 @@ export default async function ergodicWords() {
       delWords[i] = wordsList[i]
     }
   }
-  const wordsListStr = Object.keys(wordsList)
   const delWordsListStr = Object.keys(delWords)
+
   const R1 = new ReplaceMain(wordsListStr)
   R1.walk()
 
@@ -29,9 +31,8 @@ export default async function ergodicWords() {
     const list1 = document.getElementsByClassName(
       R1.classNamePrefix + i,
     )
-    let id = ''
     for (const i2 of list1) {
-      id = `${i2.toString()}1`
+      const id = `${i2.toString()}1`
       const root = ReactDOM.createRoot(i2)
 
       if (delWordsListStr.includes(i)) {
