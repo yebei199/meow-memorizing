@@ -46,3 +46,4 @@ export async function addWordLocal(
   // await extensionStorage.setItem('myWords', wordsList)
   await myWords.setValue(wordsList)
 }
+

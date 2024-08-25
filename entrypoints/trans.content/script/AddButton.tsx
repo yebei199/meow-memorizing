@@ -13,12 +13,12 @@ export async function selectListen() {
     if (!selection || selection.rangeCount < 1) return
 
     const range = selection.getRangeAt(0)
-    const selectedText = range
-      .toString()
-      .trim()
-      .toLowerCase()
+    const selectedText = range.toString().trim()
     // if the selected text is not a valid word, return
-    console.log('first', await filterWord(selectedText))
+    console.log(
+      'first',
+      await filterWord(selectedText.toLowerCase()),
+    )
     if (await filterWord(selectedText)) return
 
     const mySpan: HTMLSpanElement =

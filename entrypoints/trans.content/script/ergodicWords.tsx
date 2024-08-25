@@ -60,6 +60,13 @@ class ReplaceMain {
   public targetWordSet: Set<string>
 
   public startNode: HTMLElement = document.body
+  public excludeTags: string[] = [
+    'script',
+    'CODE',
+    'BUTTON',
+    'A',
+    'a',
+  ]
 
   constructor(targetWordList: string[]) {
     this.targetWordSet = new Set(targetWordList)
@@ -80,7 +87,11 @@ class ReplaceMain {
             // Document fragment
             let child = current.firstChild // 改为从第一个子节点开始
             while (child) {
-              if ((child as Element).tagName !== 'CODE') {
+              if (
+                !this.excludeTags.includes(
+                  (child as Element).tagName,
+                )
+              ) {
                 stack.push(child)
               }
 
