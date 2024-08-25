@@ -10,14 +10,10 @@ import {
   useEffect,
   useState,
 } from 'react'
-import ReactDOM from 'react-dom/client'
-import {
-  addWordLocal,
-  // getWordsList,
-  queryWord,
-} from './storageAction.ts'
+import { addWordLocal, queryWord } from './storageAction.ts'
+import type style from 'antd/es/_util/wave/style'
 
-/*
+/**
  * @description 对于每个单词的翻译准备以及鼠标悬停时显示额外内容的组件
  * @param word 单词
  * @example <TransLine word={'hello'} />
@@ -41,22 +37,35 @@ export default function TransLine({
  * @example <T2 word={'hello'} />
  *
  */
+
 function T2({ word }: { word: string }) {
   const [isHovered, setIsHovered] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState<{
     x: number
     y: number
   }>({ x: 0, y: 0 })
+  const [hasTriggered, setHasTriggered] = useState(false) // 新增的状态，用于跟踪是否已经触发过 mouseenter 事件
+  const timeoutId = useRef<number | null>(null) // 用于存储 setTimeout 的 ID
 
   function handleMouseEnter(
     event: React.MouseEvent<HTMLSpanElement, MouseEvent>,
   ): void {
-    setTooltipPosition({ x: event.pageX, y: event.pageY })
-    setIsHovered(true)
+    if (!hasTriggered) {
+      setTooltipPosition({ x: event.pageX, y: event.pageY })
+      setIsHovered(true)
+      setHasTriggered(true) // 设置为已触发状态
+    }
+    if (timeoutId.current) {
+      clearTimeout(timeoutId.current)
+    }
   }
 
   const handleMouseLeave = () => {
-    setIsHovered(false)
+    // 延迟卸载,避免闪烁
+    timeoutId.current = window.setTimeout(() => {
+      setIsHovered(false)
+      setHasTriggered(false) // 重置触发状态，以便下次可以重新触发
+    }, 500)
   }
 
   return (
@@ -93,7 +102,7 @@ export interface IWordQuery {
   word: string
 }
 
-/*
+/**
  * @description 鼠标悬停时显示额外内容
  * 逻辑是先发送消息到后台,然后后台返回html片段,最后将html片段渲染出来
  * @param word 单词
@@ -112,26 +121,34 @@ function HoverTooltip({
   useEffect(() => {
     async function fetchData() {
       const wordLocalInfo = await queryWord(word3)
+      if (!wordLocalInfo) return
+
+      const word: IWordQuery = { word: word3 }
+      const htmlString = await sendMessage('trans', word)
+      const element = parseBingDict(htmlString)
+      if (element) {
+        setDataEnd(element)
+      } else {
+        const updatedWordInfo = {
+          ...wordLocalInfo,
+          isDeleted: true,
+          deleteTimes: wordLocalInfo?.deleteTimes + 1,
+        }
+        await addWordLocal(updatedWordInfo) // 假设这个函数会更新服务器或本地存储
+        await ergodicWords()
+        return
+      }
+
       if (wordLocalInfo) {
         wordLocalInfo.queryTimes += 1
         setWordLocalInfoOuter(wordLocalInfo)
         await addWordLocal(wordLocalInfo)
-      }
-      const word: IWordQuery = { word: word3 }
-      try {
-        const htmlString = await sendMessage('trans', word)
-        const element = parseBingDict(htmlString)
-        setDataEnd(element)
-      } catch (error) {
-        console.error('Error fetching data:', error)
       }
     }
     fetchData().catch(console.error)
 
     return () => {}
   }, [word3])
-  // 创建一个ref来存储要定位的DOM元素
-  const tooltipRef = useRef<HTMLDivElement>(null)
 
   async function deleteWord() {
     if (wordLocalInfoOuter) {
@@ -150,7 +167,7 @@ function HoverTooltip({
     <div
       style={{
         left: `${x - 70}px`,
-        top: `${y + 1}px`,
+        top: `${y + 30}px`,
       }}
       className={classNames(
         'position-absolute  overflow-auto z-99',
@@ -186,7 +203,7 @@ function HoverTooltip({
   )
 }
 
-/*
+/**
  * 解析html字符串
  */
 function parseBingDict(htmlString: string) {
@@ -201,7 +218,7 @@ function parseBingDict(htmlString: string) {
     ?.getAttribute('data-definition')
 
   if (!element) {
-    return '没找到'
+    return null
   }
 
   return element

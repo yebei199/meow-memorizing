@@ -5,5 +5,9 @@
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true
-  }
+  },
+  "exclude": [
+    ".output",
+    "node_modules"
+  ]
 }

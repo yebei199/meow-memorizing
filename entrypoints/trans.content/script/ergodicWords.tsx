@@ -1,5 +1,5 @@
 import { getWordsList } from '@/entrypoints/trans.content/script/storageAction.ts'
-import type { IALlWordsStorage } from '@/src/wxtStore.ts'
+import type { IAllWordsStorage } from '@/src/wxtStore.ts'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import TransLine from './TransLine.tsx'
@@ -11,17 +11,19 @@ import TransLine from './TransLine.tsx'
 */
 export default async function ergodicWords() {
   //筛选
-  const wordsList = await getWordsList()
-  if (!wordsList) return
+  const wordsList: IAllWordsStorage = await getWordsList()
+  console.log(wordsList)
+  const wordsListStr = Object.keys(wordsList)
+  if (wordsListStr.length === 0) return
 
-  const delWords: IALlWordsStorage = {}
+  const delWords: IAllWordsStorage = {}
   for (const i in wordsList) {
     if (wordsList[i].isDeleted) {
       delWords[i] = wordsList[i]
     }
   }
-  const wordsListStr = Object.keys(wordsList)
   const delWordsListStr = Object.keys(delWords)
+
   const R1 = new ReplaceMain(wordsListStr)
   R1.walk()
 
@@ -29,9 +31,8 @@ export default async function ergodicWords() {
     const list1 = document.getElementsByClassName(
       R1.classNamePrefix + i,
     )
-    let id = ''
     for (const i2 of list1) {
-      id = `${i2.toString()}1`
+      const id = `${i2.toString()}1`
       const root = ReactDOM.createRoot(i2)
 
       if (delWordsListStr.includes(i)) {
@@ -59,6 +60,13 @@ class ReplaceMain {
   public targetWordSet: Set<string>
 
   public startNode: HTMLElement = document.body
+  public excludeTags: string[] = [
+    'script',
+    'CODE',
+    'BUTTON',
+    'A',
+    'a',
+  ]
 
   constructor(targetWordList: string[]) {
     this.targetWordSet = new Set(targetWordList)
@@ -79,7 +87,11 @@ class ReplaceMain {
             // Document fragment
             let child = current.firstChild // 改为从第一个子节点开始
             while (child) {
-              if ((child as Element).tagName !== 'CODE') {
+              if (
+                !this.excludeTags.includes(
+                  (child as Element).tagName,
+                )
+              ) {
                 stack.push(child)
               }
 

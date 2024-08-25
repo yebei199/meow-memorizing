@@ -1,45 +1,49 @@
 import {
-  type IALlWordsStorage,
+  type IAllWordsStorage,
   type IWordStorage,
   extensionStorage,
-} from "@/src/wxtStore.ts";
+  myWords,
+} from '@/src/wxtStore.ts'
 
-/*
- * 从浏览器本地获取单词列表
+/**
+ * get words list from local storage
  */
-export async function getWordsList(): Promise<IALlWordsStorage | null> {
-  const wordsList =
-    await extensionStorage.getItem("myWords");
-  if (!wordsList) return null;
-  return wordsList;
+export async function getWordsList(): Promise<IAllWordsStorage> {
+  try {
+    const wordsList = await myWords.getValue()
+    return wordsList
+  } catch (error) {
+    // can't get local storage
+    console.error(error)
+    throw new Error('Can not get local storage words list')
+  }
 }
 
-export async function queryWord(
-  word: string,
-): Promise<IWordStorage | undefined> {
-  const wordsList: IALlWordsStorage | null =
-    await getWordsList();
-  return wordsList?.[word];
+/**
+ *  query from local storage
+ */
+export async function queryWord(word: string) {
+  try {
+    const wordsList: IAllWordsStorage = await getWordsList()
+    return wordsList[word]
+  } catch (error) {
+    console.error(error)
+  }
 }
 
-/*
- * 添加单词到本地
+/**
  *
- * @param word 单词
- * @returns 无
+ * add word to local storage
+ * @param wordNeedAdd the word of need to add to word list
+ * @returns void
  */
 export async function addWordLocal(
   wordNeedAdd: IWordStorage,
 ): Promise<void> {
-  const wordsList: IALlWordsStorage | null =
-    await getWordsList();
+  const wordsList = await getWordsList()
 
-  if (!wordsList) {
-    const initial: IALlWordsStorage = {};
-    initial[wordNeedAdd.word] = wordNeedAdd;
-    await extensionStorage.setItem("myWords", initial);
-    return;
-  }
-  wordsList[wordNeedAdd.word] = wordNeedAdd;
-  await extensionStorage.setItem("myWords", wordsList);
+  wordsList[wordNeedAdd.word] = wordNeedAdd
+  // await extensionStorage.setItem('myWords', wordsList)
+  await myWords.setValue(wordsList)
 }
+
