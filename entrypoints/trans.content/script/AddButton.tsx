@@ -33,7 +33,7 @@ export async function selectListen() {
   })
 }
 
-/*
+/**
  * 添加已经查询到的单词
  */
 async function addQueriedWord(word: string) {

@@ -2,23 +2,20 @@ import {
   type IAllWordsStorage,
   type IWordStorage,
   extensionStorage,
+  myWords,
 } from '@/src/wxtStore.ts'
 
-import { storage } from 'wxt/storage'
 /**
  * get words list from local storage
  */
-export async function getWordsList(): Promise<IAllWordsStorage | null> {
+export async function getWordsList(): Promise<IAllWordsStorage> {
   try {
-    const wordsList =
-      await storage.getItem<IAllWordsStorage>(
-        'sync:myWords',
-      )
+    const wordsList = await myWords.getValue()
     return wordsList
   } catch (error) {
     // can't get local storage
     console.error(error)
-    return null
+    throw new Error('Can not get local storage words list')
   }
 }
 
@@ -32,7 +29,6 @@ export async function queryWord(word: string) {
     return wordsList?.[word]
   } catch (error) {
     console.error(error)
-    return undefined
   }
 }
 
@@ -45,22 +41,9 @@ export async function queryWord(word: string) {
 export async function addWordLocal(
   wordNeedAdd: IWordStorage,
 ): Promise<void> {
-  let wordsList: IAllWordsStorage | null = null
+  const wordsList = await getWordsList()
 
-  try {
-    wordsList = await getWordsList()
-  } catch (error) {
-    console.error('Error fetching words list:', error)
-  }
-
-  if (!wordsList) {
-    // if local storage is empty, create a new object
-    wordsList = {}
-    wordsList[wordNeedAdd.word] = wordNeedAdd
-  } else {
-    wordsList[wordNeedAdd.word] = wordNeedAdd
-  }
-
-  await extensionStorage.setItem('myWords', wordsList)
-  // await extensionStorage.onChange(key, cb)
+  wordsList[wordNeedAdd.word] = wordNeedAdd
+  // await extensionStorage.setItem('myWords', wordsList)
+  await myWords.setValue(wordsList)
 }

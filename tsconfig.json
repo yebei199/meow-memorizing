@@ -6,8 +6,8 @@
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true
   },
-  "include": [
-    "./src/**/*",
-    "./entrypoints/**/*"
+  "exclude": [
+    ".output",
+    "node_modules"
   ]
 }
