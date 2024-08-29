@@ -43,7 +43,7 @@
     "lint-staged": "^15.2.9",
     "typescript": "^5.5.4",
     "unocss": "^0.62.2",
-    "wxt": "0.19.7"
+    "wxt": "0.19.8"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
