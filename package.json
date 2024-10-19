@@ -31,7 +31,7 @@
     "@types/react": "^18.3.4",
     "@types/react-dom": "^18.3.0",
     "@unocss/postcss": "0.63.4",
-    "@webext-core/messaging": "^1.4.0",
+    "@webext-core/messaging": "^2.0.0",
     "@webext-core/storage": "^1.2.0",
     "@wxt-dev/auto-icons": "^1.0.2",
     "@wxt-dev/module-react": "^1.1.1",
