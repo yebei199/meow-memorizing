@@ -1,7 +1,7 @@
 import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords.tsx'
 import type { IWordStorage } from '@/src/wxtStore.ts'
 import { addWordLocal, queryWord } from './storageAction.ts'
-import { closeSync } from 'fs-extra'
+import {sleep} from "@antfu/utils";
 
 /**
  * listen to the mouseup event to select the text and add it to the local storage
@@ -13,12 +13,7 @@ export async function selectListen() {
     if (!selection || selection.rangeCount < 1) return
 
     const range = selection.getRangeAt(0)
-    const selectedText = range.toString().trim()
-    // if the selected text is not a valid word, return
-    console.log(
-      'first',
-      await filterWord(selectedText.toLowerCase()),
-    )
+    const selectedText = range.toString().trim().toLowerCase()
     if (await filterWord(selectedText)) return
 
     const mySpan: HTMLSpanElement =
@@ -30,8 +25,9 @@ export async function selectListen() {
 
     // add the word to the local storage and update the queryTimes
     await addQueriedWord(selectedText)
-    selection.removeAllRanges()
     await ergodicWords()
+    await sleep(3000)
+    selection.removeAllRanges()
   })
 }
 
