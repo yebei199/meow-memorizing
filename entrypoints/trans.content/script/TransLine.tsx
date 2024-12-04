@@ -1,8 +1,9 @@
-import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords.tsx'
+import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords'
 import { sendMessage } from '@/src/wxtMessaging.ts'
 import type { IWordStorage } from '@/src/wxtStore.ts'
 import { createPortal } from 'react-dom'
 
+import { addLineBreak } from '@/src/memoryWord/getTranslation'
 import classNames from 'classnames'
 import type React from 'react'
 import {
@@ -11,7 +12,6 @@ import {
   useState,
 } from 'react'
 import { addWordLocal, queryWord } from './storageAction.ts'
-import type style from 'antd/es/_util/wave/style'
 
 /**
  * @description 对于每个单词的翻译准备以及鼠标悬停时显示额外内容的组件
@@ -125,7 +125,8 @@ function HoverTooltip({
 
       const word: IWordQuery = { word: word3 }
       const htmlString = await sendMessage('trans', word)
-      const element = parseBingDict(htmlString)
+      const element: string | null =
+        parseBingDict(htmlString)
       if (element) {
         setDataEnd(element)
       } else {
@@ -178,10 +179,10 @@ function HoverTooltip({
     >
       {/* 这里是悬停时显示的额外内容 */}
       <h1 className='text-center'>{word}</h1>
-
       <hr className={'bg-blue-7'} />
-      <p className='break-words'>{dataEnd}</p>
-
+      <p className='whitespace-pre-wrap leading-[0.9]'>
+        {dataEnd}
+      </p>
       <hr className={'bg-blue-7'} />
       <span>
         查询次数:
@@ -206,22 +207,23 @@ function HoverTooltip({
 /**
  * 解析html字符串
  */
-function parseBingDict(htmlString: string) {
+function parseBingDict(htmlString: string): string | null {
   const parser = new DOMParser()
   const doc = parser.parseFromString(
     htmlString,
     'text/html',
   )
-
   const element = doc
     .querySelector('#clientnewword')
     ?.getAttribute('data-definition')
-
   if (!element) {
+    console.error(
+      'no data-definition, the word may not exist',
+    )
     return null
   }
-
-  return element
+  const endText = addLineBreak(element)
+  return addLineBreak(endText)
 }
 
 // 创建一个 Portal 组件

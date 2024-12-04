@@ -27,7 +27,8 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@react-buddy/palette-antd": "^5.3.0",
+    "@biomejs/biome": "^1.9.4",
     "@types/fs-extra": "^11.0.4",
     "@types/react": "^18.3.4",
     "@types/react-dom": "^18.3.0",
