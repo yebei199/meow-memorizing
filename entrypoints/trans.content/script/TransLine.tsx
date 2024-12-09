@@ -4,6 +4,7 @@ import type { IWordStorage } from '@/src/wxtStore.ts'
 import { createPortal } from 'react-dom'
 
 import { addLineBreak } from '@/src/memoryWord/getTranslation'
+import { Button } from 'antd'
 import classNames from 'classnames'
 import type React from 'react'
 import {
@@ -37,7 +38,6 @@ export default function TransLine({
  * @example <T2 word={'hello'} />
  *
  */
-
 function T2({ word }: { word: string }) {
   const [isHovered, setIsHovered] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState<{
@@ -106,6 +106,8 @@ export interface IWordQuery {
  * @description 鼠标悬停时显示额外内容
  * 逻辑是先发送消息到后台,然后后台返回html片段,最后将html片段渲染出来
  * @param word 单词
+ * @param x
+ * @param y
  * @example <HoverTooltip word={'hello'} />
  */
 function HoverTooltip({
@@ -190,15 +192,14 @@ function HoverTooltip({
           {wordLocalInfoOuter?.queryTimes}
         </p>
         <br />
-        <button
-          type='button' // 添加了显式的type属性
+        <Button
           className={
             'bg-blue-200/55 rounded-sm border border-pink'
           }
           onClick={deleteWord}
         >
           删除
-        </button>
+        </Button>
       </span>
     </div>
   )

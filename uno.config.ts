@@ -7,7 +7,10 @@ export default defineConfig({
       '**/*.{html,js,ts,jsx,tsx,vue,svelte,astro}',
     ],
   },
-  presets: [
-    presetUno(),
-  ],
+  layers: {
+    high: 13,
+    default: 1,
+    utilities: 2,
+  },
+  presets: [presetUno()],
 })
