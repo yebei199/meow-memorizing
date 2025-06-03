@@ -44,7 +44,7 @@
     "lint-staged": "^16.0.0",
     "typescript": "^5.5.4",
     "unocss": "^66.0.0",
-    "wxt": "0.20.6"
+    "wxt": "0.20.7"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
