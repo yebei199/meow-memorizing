@@ -30,7 +30,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@unocss/postcss": "66.1.2",
+    "@unocss/postcss": "66.1.4",
     "@webext-core/messaging": "^2.0.0",
     "@webext-core/storage": "^1.2.0",
     "@wxt-dev/auto-icons": "^1.0.2",
