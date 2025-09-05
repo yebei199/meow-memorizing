@@ -1,17 +1,18 @@
-import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords.tsx'
-import { sendMessage } from '@/src/wxtMessaging.ts'
-import type { IWordStorage } from '@/src/wxtStore.ts'
-import { createPortal } from 'react-dom'
-
-import classNames from 'classnames'
-import type React from 'react'
+import classNames from 'classnames';
+import type React from 'react';
 import {
   type ReactElement,
   useEffect,
   useState,
-} from 'react'
-import { addWordLocal, queryWord } from './storageAction.ts'
-import type style from 'antd/es/_util/wave/style'
+} from 'react';
+import { createPortal } from 'react-dom';
+import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords.tsx';
+import { sendMessage } from '@/src/wxtMessaging.ts';
+import type { IWordStorage } from '@/src/wxtStore.ts';
+import {
+  addWordLocal,
+  queryWord,
+} from './storageAction.ts';
 
 /**
  * @description 对于每个单词的翻译准备以及鼠标悬停时显示额外内容的组件
@@ -21,13 +22,13 @@ import type style from 'antd/es/_util/wave/style'
 export default function TransLine({
   word,
 }: {
-  word: string
+  word: string;
 }) {
   return (
     <div className={'inline'}>
       <T2 word={word} />
     </div>
-  )
+  );
 }
 
 /*
@@ -39,51 +40,71 @@ export default function TransLine({
  */
 
 function T2({ word }: { word: string }) {
-  const [isHovered, setIsHovered] = useState(false)
+  const [isHovered, setIsHovered] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{
-    x: number
-    y: number
-  }>({ x: 0, y: 0 })
-  const [hasTriggered, setHasTriggered] = useState(false) // 新增的状态，用于跟踪是否已经触发过 mouseenter 事件
-  const timeoutId = useRef<number | null>(null) // 用于存储 setTimeout 的 ID
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
+  const [hasTriggered, setHasTriggered] = useState(false); // 新增的状态，用于跟踪是否已经触发过 mouseenter 事件
+  const timeoutId = useRef<number | null>(null); // 用于存储 setTimeout 的 ID
 
   function handleMouseEnter(
-    event: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ): void {
     if (!hasTriggered) {
-      setTooltipPosition({ x: event.pageX, y: event.pageY })
-      setIsHovered(true)
-      setHasTriggered(true) // 设置为已触发状态
+      setTooltipPosition({
+        x: event.pageX,
+        y: event.pageY,
+      });
+      setIsHovered(true);
+      setHasTriggered(true); // 设置为已触发状态
     }
     if (timeoutId.current) {
-      clearTimeout(timeoutId.current)
+      clearTimeout(timeoutId.current);
     }
   }
 
   const handleMouseLeave = () => {
     // 延迟卸载,避免闪烁
     timeoutId.current = window.setTimeout(() => {
-      setIsHovered(false)
-      setHasTriggered(false) // 重置触发状态，以便下次可以重新触发
-    }, 500)
-  }
+      setIsHovered(false);
+      setHasTriggered(false); // 重置触发状态，以便下次可以重新触发
+    }, 500);
+  };
 
   return (
-    <span
+    <button
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
-        color: 'black',
+        color: 'inherit',
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        font: 'inherit',
+        cursor: 'pointer',
+        position: 'relative',
       }}
+      type="button"
     >
       <span
         className={classNames(
-          'font-mono rounded-sm shadow-lg shadow-lightBlue',
-          'text-center border bg-lightBlue  text-black ',
-          'hover:bg-amber ',
+          'font-mono',
+          'relative',
         )}
       >
         {word}
+        <span
+          style={{
+            position: 'absolute',
+            bottom: '-2px',
+            left: 0,
+            width: '100%',
+            height: '4px',
+            background: 'linear-gradient(90deg, #FF8C00, #FFA500, #FF8C00)',
+            borderRadius: '2px',
+          }}
+        />
       </span>
       <TooltipPortal isVisible={isHovered}>
         {
@@ -94,12 +115,12 @@ function T2({ word }: { word: string }) {
           />
         }
       </TooltipPortal>
-    </span>
-  )
+    </button>
+  );
 }
 
 export interface IWordQuery {
-  word: string
+  word: string;
 }
 
 /**
@@ -112,43 +133,47 @@ function HoverTooltip({
   word,
   x,
   y,
-}: { word: string; x: number; y: number }) {
-  const word3 = word
+}: {
+  word: string;
+  x: number;
+  y: number;
+}) {
+  const word3 = word;
   const [wordLocalInfoOuter, setWordLocalInfoOuter] =
-    useState<IWordStorage>()
-  const [dataEnd, setDataEnd] = useState<string>('')
+    useState<IWordStorage>();
+  const [dataEnd, setDataEnd] = useState<string>('');
 
   useEffect(() => {
     async function fetchData() {
-      const wordLocalInfo = await queryWord(word3)
-      if (!wordLocalInfo) return
+      const wordLocalInfo = await queryWord(word3);
+      if (!wordLocalInfo) return;
 
-      const word: IWordQuery = { word: word3 }
-      const htmlString = await sendMessage('trans', word)
-      const element = parseBingDict(htmlString)
+      const word: IWordQuery = { word: word3 };
+      const htmlString = await sendMessage('trans', word);
+      const element = parseBingDict(htmlString);
       if (element) {
-        setDataEnd(element)
+        setDataEnd(element);
       } else {
         const updatedWordInfo = {
           ...wordLocalInfo,
           isDeleted: true,
           deleteTimes: wordLocalInfo?.deleteTimes + 1,
-        }
-        await addWordLocal(updatedWordInfo) // 假设这个函数会更新服务器或本地存储
-        await ergodicWords()
-        return
+        };
+        await addWordLocal(updatedWordInfo); // 假设这个函数会更新服务器或本地存储
+        await ergodicWords();
+        return;
       }
 
       if (wordLocalInfo) {
-        wordLocalInfo.queryTimes += 1
-        setWordLocalInfoOuter(wordLocalInfo)
-        await addWordLocal(wordLocalInfo)
+        wordLocalInfo.queryTimes += 1;
+        setWordLocalInfoOuter(wordLocalInfo);
+        await addWordLocal(wordLocalInfo);
       }
     }
-    fetchData().catch(console.error)
+    fetchData().catch(console.error);
 
-    return () => {}
-  }, [word3])
+    return () => {};
+  }, [word3]);
 
   async function deleteWord() {
     if (wordLocalInfoOuter) {
@@ -157,82 +182,108 @@ function HoverTooltip({
         ...wordLocalInfoOuter,
         isDeleted: true,
         deleteTimes: wordLocalInfoOuter.deleteTimes + 1,
-      }
-      await addWordLocal(updatedWordInfo) // 假设这个函数会更新服务器或本地存储
-      setWordLocalInfoOuter(updatedWordInfo) // 更新组件状态
-      await ergodicWords()
+      };
+      await addWordLocal(updatedWordInfo); // 假设这个函数会更新服务器或本地存储
+      setWordLocalInfoOuter(updatedWordInfo); // 更新组件状态
+      await ergodicWords();
     }
   }
   return (
     <div
+      className={classNames(
+        'position-absolute overflow-auto z-99',
+        'font-mono',
+        'w-90 h-auto',
+        'rounded-2xl p-6',
+      )}
       style={{
         left: `${x - 70}px`,
         top: `${y + 30}px`,
+        background: 'rgba(255, 255, 255, 0.25)',
+        backdropFilter: 'blur(15px)',
+        WebkitBackdropFilter: 'blur(15px)',
+        borderRadius: '18px',
+        boxShadow: '0 12px 40px 6px rgba(0, 0, 0, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.2)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        maxWidth: '400px',
       }}
-      className={classNames(
-        'position-absolute  overflow-auto z-99',
-        'border-( radius-12 ) font-mono ',
-        'w-90 h-auto text-black  shadow-lg shadow-blue shadow-op-80',
-        'rounded-lg backdrop-blur-5 bg-blue-300/55 p-4',
-      )}
     >
       {/* 这里是悬停时显示的额外内容 */}
-      <h1 className='text-center'>{word}</h1>
+      <h1 className='text-center text-xl font-bold mb-3' style={{ color: 'rgba(0, 0, 0, 0.9)', textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)' }}>{word}</h1>
 
-      <hr className={'bg-blue-7'} />
-      <p className='break-words'>{dataEnd}</p>
+      <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
+      <p className='break-words my-4' style={{ color: 'rgba(0, 0, 0, 0.85)' }}>{dataEnd}</p>
 
-      <hr className={'bg-blue-7'} />
-      <span>
-        查询次数:
-        <p className='inline break-words'>
-          {wordLocalInfoOuter?.queryTimes}
-        </p>
-        <br />
+      <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
+      <span className='flex justify-between items-center'>
+        <span style={{ color: 'rgba(0, 0, 0, 0.8)' }}>
+          查询次数:
+          <span className='inline break-words ml-2 font-semibold'>
+            {wordLocalInfoOuter?.queryTimes}
+          </span>
+        </span>
         <button
-          type='button' // 添加了显式的type属性
-          className={
-            'bg-blue-200/55 rounded-sm border border-pink'
-          }
+          type='button'
+          style={{
+            background: 'rgba(255, 255, 255, 0.3)',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            borderRadius: '10px',
+            padding: '8px 16px',
+            color: 'rgba(0, 0, 0, 0.8)',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+            fontWeight: '500',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.45)';
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
           onClick={deleteWord}
         >
           删除
         </button>
       </span>
     </div>
-  )
+  );
 }
 
 /**
  * 解析html字符串
  */
 function parseBingDict(htmlString: string) {
-  const parser = new DOMParser()
+  const parser = new DOMParser();
   const doc = parser.parseFromString(
     htmlString,
     'text/html',
-  )
+  );
 
   const element = doc
     .querySelector('#clientnewword')
-    ?.getAttribute('data-definition')
+    ?.getAttribute('data-definition');
 
   if (!element) {
-    return null
+    return null;
   }
 
-  return element
+  return element;
 }
 
 // 创建一个 Portal 组件
 export const TooltipPortal = ({
   children,
   isVisible,
-}: { children: ReactElement; isVisible: boolean }) => {
-  if (!isVisible) return null
+}: {
+  children: ReactElement;
+  isVisible: boolean;
+}) => {
+  if (!isVisible) return null;
 
   return createPortal(
     children,
     document.body, // 或者任何其他的 DOM 元素
-  )
-}
+  );
+};

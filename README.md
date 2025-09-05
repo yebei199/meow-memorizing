@@ -25,7 +25,7 @@
 
 ```shell
 bun run build
-``` 
+```
 解压后的插件位置: .output\chrome-mv3-build
 之后谷歌浏览器开发者模式直接安装插件即可
 
@@ -38,7 +38,7 @@ bun run build
 # 其他
 欢迎提交issue,提交pr,或者[聊天吹水](https://github.com/yebei199/meow-memorizing/discussions)
 
-不上架谷歌商店,因为无法付开发者费用,大家就在github直接下载用吧
+上架谷歌商店申请失败, 可能是因为过于简陋
 
 ## License
 Code: (c) 2024 - Present - yebei199
