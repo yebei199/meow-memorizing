@@ -199,54 +199,56 @@ function HoverTooltip({
       style={{
         left: `${x - 70}px`,
         top: `${y + 30}px`,
-        background: 'rgba(255, 255, 255, 0.25)',
-        backdropFilter: 'blur(15px)',
-        WebkitBackdropFilter: 'blur(15px)',
+        background: 'rgba(255, 255, 255, 0.01)', // 进一步提高透明度
+        backdropFilter: 'blur(30px)',
+        WebkitBackdropFilter: 'blur(30px)',
         borderRadius: '18px',
-        boxShadow: '0 12px 40px 6px rgba(0, 0, 0, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.2)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.7)',
         maxWidth: '400px',
       }}
     >
       {/* 这里是悬停时显示的额外内容 */}
-      <h1 className='text-center text-xl font-bold mb-3' style={{ color: 'rgba(0, 0, 0, 0.9)', textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)' }}>{word}</h1>
+      <h1 className='text-center text-xl font-bold mb-3' style={{ color: 'inherit', textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)' }}>{word}</h1>
 
       <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
-      <p className='break-words my-4' style={{ color: 'rgba(0, 0, 0, 0.85)' }}>{dataEnd}</p>
+      <p className='break-words my-4' style={{ color: 'inherit' }}>{dataEnd}</p>
 
       <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
       <span className='flex justify-between items-center'>
-        <span style={{ color: 'rgba(0, 0, 0, 0.8)' }}>
+        <span style={{ color: 'inherit' }}>
           查询次数:
           <span className='inline break-words ml-2 font-semibold'>
             {wordLocalInfoOuter?.queryTimes}
           </span>
         </span>
-        <button
-          type='button'
-          style={{
-            background: 'rgba(255, 255, 255, 0.3)',
-            border: '1px solid rgba(0, 0, 0, 0.1)',
-            borderRadius: '10px',
-            padding: '8px 16px',
-            color: 'rgba(0, 0, 0, 0.8)',
-            cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-            fontWeight: '500',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.45)';
-            e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-          onClick={deleteWord}
-        >
-          删除
-        </button>
+        {/* 删除按钮改为右上角红色"x" */}
       </span>
+      <button
+        type='button'
+        className={classNames(
+          'absolute',
+          'top-2',
+          'right-2',
+          'w-6',
+          'h-6',
+          'flex',
+          'items-center',
+          'justify-center',
+          'rounded-full',
+          'text-red-500',
+          'font-bold',
+          'transition-all',
+          'hover:bg-red-100'
+        )}
+        onClick={deleteWord}
+        title="删除单词"
+        style={{
+          background: 'transparent',
+        }}
+      >
+        ×
+      </button>
     </div>
   );
 }
@@ -287,3 +289,7 @@ export const TooltipPortal = ({
     document.body, // 或者任何其他的 DOM 元素
   );
 };
+
+
+
+
