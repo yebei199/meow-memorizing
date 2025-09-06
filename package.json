@@ -26,7 +26,6 @@
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.2",
     "@types/fs-extra": "^11.0.4",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
@@ -43,7 +42,8 @@
     "lie": "^3.3.0",
     "lint-staged": "^16.1.6",
     "unocss": "^66.5.0",
-    "wxt": "^0.20.10",
+    "@biomejs/biome": "^2.2.3",
+    "wxt": "^0.20.11",
     "oxlint": "^1.14.0",
     "oxlint-tsgolint": "^0.1.5",
     "@typescript/native-preview": "^7.0.0-dev.20250904.1",

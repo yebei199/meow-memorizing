@@ -85,14 +85,9 @@ function T2({ word }: { word: string }) {
         cursor: 'pointer',
         position: 'relative',
       }}
-      type="button"
+      type='button'
     >
-      <span
-        className={classNames(
-          'font-mono',
-          'relative',
-        )}
-      >
+      <span className={classNames('font-mono', 'relative')}>
         {word}
         <span
           style={{
@@ -101,7 +96,8 @@ function T2({ word }: { word: string }) {
             left: 0,
             width: '100%',
             height: '4px',
-            background: 'linear-gradient(90deg, #FF8C00, #FFA500, #FF8C00)',
+            background:
+              'linear-gradient(90deg, #FF8C00, #FFA500, #FF8C00)',
             borderRadius: '2px',
           }}
         />
@@ -209,10 +205,24 @@ function HoverTooltip({
       }}
     >
       {/* 这里是悬停时显示的额外内容 */}
-      <h1 className='text-center text-xl font-bold mb-3' style={{ color: 'inherit', fontFamily: 'inherit', textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)' }}>{word}</h1>
+      <h1
+        className='text-center text-xl font-bold mb-3'
+        style={{
+          color: 'inherit',
+          fontFamily: 'inherit',
+          textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)',
+        }}
+      >
+        {word}
+      </h1>
 
       <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
-      <p className='break-words my-4' style={{ color: 'inherit', fontFamily: 'inherit' }}>{dataEnd}</p>
+      <p
+        className='break-words my-4'
+        style={{ color: 'inherit', fontFamily: 'inherit', whiteSpace: 'pre-line' }}
+      >
+        {dataEnd}
+      </p>
 
       <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
       <span className='flex justify-between items-center'>
@@ -239,10 +249,10 @@ function HoverTooltip({
           'text-red-500',
           'font-bold',
           'transition-all',
-          'hover:bg-red-100'
+          'hover:bg-red-100',
         )}
         onClick={deleteWord}
-        title="删除单词"
+        title='删除单词'
         style={{
           background: 'transparent',
         }}
@@ -268,10 +278,12 @@ function parseBingDict(htmlString: string) {
     ?.getAttribute('data-definition');
 
   if (!element) {
-    return null;
+    return '没找到';
   }
 
-  return element;
+  // 使用通用正则表达式匹配词性格式（字母加点的模式）
+  // 在每个词性前添加换行（除了第一个）
+  return element.replace(/(\s)([a-zA-Z]+\.)(?=\s)/g, '$1\n$2');
 }
 
 // 创建一个 Portal 组件
@@ -289,5 +301,3 @@ export const TooltipPortal = ({
     document.body, // 或者任何其他的 DOM 元素
   );
 };
-
-
