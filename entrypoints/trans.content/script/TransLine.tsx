@@ -192,7 +192,6 @@ function HoverTooltip({
     <div
       className={classNames(
         'position-absolute overflow-auto z-99',
-        'font-mono',
         'w-90 h-auto',
         'rounded-2xl p-6',
       )}
@@ -206,13 +205,14 @@ function HoverTooltip({
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
         border: '1px solid rgba(255, 255, 255, 0.7)',
         maxWidth: '400px',
+        fontFamily: 'inherit',
       }}
     >
       {/* 这里是悬停时显示的额外内容 */}
-      <h1 className='text-center text-xl font-bold mb-3' style={{ color: 'inherit', textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)' }}>{word}</h1>
+      <h1 className='text-center text-xl font-bold mb-3' style={{ color: 'inherit', fontFamily: 'inherit', textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)' }}>{word}</h1>
 
       <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
-      <p className='break-words my-4' style={{ color: 'inherit' }}>{dataEnd}</p>
+      <p className='break-words my-4' style={{ color: 'inherit', fontFamily: 'inherit' }}>{dataEnd}</p>
 
       <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
       <span className='flex justify-between items-center'>
@@ -289,7 +289,5 @@ export const TooltipPortal = ({
     document.body, // 或者任何其他的 DOM 元素
   );
 };
-
-
 
 

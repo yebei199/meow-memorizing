@@ -3,8 +3,6 @@ import { VocabularyBook } from '@/entrypoints/popup/popup-main/VocabularyBook.ts
 
 export default function App() {
   return (
-    <>
       <VocabularyBook />
-    </>
   )
 }
