@@ -1,5 +1,5 @@
-import { selectListen } from '@/entrypoints/trans.content/script/AddButton.tsx'
 import LiePromise from 'lie'
+import { selectListen } from '@/entrypoints/trans.content/script/AddButton.tsx'
 import ergodicWords from './ergodicWords.tsx'
 
 export default async function startTrans() {

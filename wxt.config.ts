@@ -12,13 +12,17 @@ export default defineConfig({
         '@webext-core/proxy-service',
       ],
     },
+
+
+
+
   }),
-  extensionApi: 'chrome',
+  targetBrowsers: [ 'chrome','firefox' ],
   manifest: {
-    // description: '记单词的小插件',
-    permissions: ['tabs', 'storage', 'activeTab'],
+    description: '记单词的小插件',
+    permissions: [ 'storage' ],
   },
-  runner: {
+  webExt: {
     startUrls: [
       'https://wxt.dev/get-started/migrate-to-wxt.html',
     ],

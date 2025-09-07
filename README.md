@@ -17,15 +17,16 @@
 
 <hr/>
 
+
 # 使用方法如下
 
-![example.gif](https://i.imgur.com/tdqxiJ7.gif)
+![example.gif](https://i.imgur.com/UMXpOQS.gif)
 
 ## 打包(已解压)
 
 ```shell
 bun run build
-``` 
+```
 解压后的插件位置: .output\chrome-mv3-build
 之后谷歌浏览器开发者模式直接安装插件即可
 
@@ -38,7 +39,8 @@ bun run build
 # 其他
 欢迎提交issue,提交pr,或者[聊天吹水](https://github.com/yebei199/meow-memorizing/discussions)
 
-不上架谷歌商店,因为无法付开发者费用,大家就在github直接下载用吧
+上架谷歌商店申请中, 不知道什么时候能通过
+之后的计划是懒得优化, 还是有很多bug, 但够用就行了
 
 ## License
 Code: (c) 2024 - Present - yebei199
