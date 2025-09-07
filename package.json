@@ -46,7 +46,7 @@
     "wxt": "^0.20.11",
     "oxlint": "^1.14.0",
     "oxlint-tsgolint": "^0.1.5",
-    "@typescript/native-preview": "^7.0.0-dev.20250904.1",
+    "@typescript/native-preview": "^7.0.0-dev.20250906.1",
     "vitest": "^3.2.4"
   },
   "lint-staged": {

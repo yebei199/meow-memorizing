@@ -12,10 +12,14 @@ export default defineConfig({
         '@webext-core/proxy-service',
       ],
     },
+
+
+
+
   }),
-  browser: 'chrome',
+  targetBrowsers: [ 'chrome','firefox' ],
   manifest: {
-    // description: '记单词的小插件',
+    description: '记单词的小插件',
     permissions: [ 'storage', 'activeTab'],
   },
   webExt: {

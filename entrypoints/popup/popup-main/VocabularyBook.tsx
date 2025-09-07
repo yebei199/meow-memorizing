@@ -4,9 +4,10 @@ import type {
   IWordStorage,
 } from '@/src/wxtStore.ts'
 import type { TableColumnsType } from 'antd'
-import { Input, Table } from 'antd'
+import { Button, Dropdown, Input, MenuProps, Table } from 'antd'
 import { useEffect, useState } from 'react'
 import { isWebsiteDarkMode } from '@/src/wxtStore.ts'
+import { DownOutlined } from '@ant-design/icons'
 
 // 提取主题配置到组件外部，避免每次渲染都重新创建
 const getThemeConfig = (isDarkMode: boolean) => ({
@@ -30,15 +31,26 @@ const getThemeConfig = (isDarkMode: boolean) => ({
 const getContainerStyle = (themeConfig: any) => ({
   width: '100%',
   height: '100%',
-  padding: '10px',
+  padding: '16px',
   boxSizing: 'border-box' as const,
   backgroundColor: themeConfig.backgroundColor,
   color: themeConfig.textColor,
-  minHeight: '100vh'
+  minHeight: '100vh',
+  fontFamily: 'sans-serif'
 });
 
-const getSearchStyle = (themeConfig: any) => ({
+// 顶部栏样式
+const getHeaderStyle = (themeConfig: any) => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
   marginBottom: '16px',
+  paddingBottom: '12px',
+  borderBottom: `1px solid ${themeConfig.borderColor}`,
+});
+
+// 搜索框样式
+const getSearchStyle = (themeConfig: any) => ({
   width: '100%',
   border: themeConfig.inputBorder,
   background: themeConfig.inputBackground,
@@ -46,6 +58,16 @@ const getSearchStyle = (themeConfig: any) => ({
   borderRadius: '4px',
   outline: 'none',
   transition: 'all 0.3s ease',
+});
+
+// 选项按钮样式
+const getOptionsBtnStyle = (themeConfig: any) => ({
+  background: themeConfig.buttonBackground,
+  color: themeConfig.buttonTextColor,
+  border: themeConfig.inputBorder,
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px',
 });
 
 // 添加新的样式函数
@@ -79,6 +101,11 @@ export const VocabularyBook = () => {
     useState<IAllWordsStorage>(defaultWords)
   const [searchText, setSearchText] = useState('')
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [minQueryTimes, setMinQueryTimes] = useState<number | undefined>(undefined)
+  const [maxQueryTimes, setMaxQueryTimes] = useState<number | undefined>(undefined)
+  const [minDeleteTimes, setMinDeleteTimes] = useState<number | undefined>(undefined)
+  const [maxDeleteTimes, setMaxDeleteTimes] = useState<number | undefined>(undefined)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false) // 控制下拉菜单开关状态
 
   // 检测系统主题
   useEffect(() => {
@@ -90,6 +117,22 @@ export const VocabularyBook = () => {
 
     checkDarkMode().catch(console.error);
   }, [])
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  }
+
+  const resetFilters = () => {
+    setMinQueryTimes(undefined)
+    setMaxQueryTimes(undefined)
+    setMinDeleteTimes(undefined)
+    setMaxDeleteTimes(undefined)
+  }
+
+  const handleDropdownVisibleChange = (flag: boolean) => {
+    // 只有当不是因为点击输入框而触发的关闭事件时，才更新下拉菜单状态
+    setIsDropdownOpen(flag);
+  }
 
   useEffect(() => {
     async function fetchWords() {
@@ -105,10 +148,97 @@ export const VocabularyBook = () => {
     fetchWords().catch(console.error)
   }, [])
 
+  // 定义下拉菜单项
+  const items: MenuProps['items'] = [
+    {
+      key: 'darkMode',
+      label: (
+        <Button
+          type="text"
+          onClick={toggleDarkMode}
+          style={{
+            width: '100%',
+            textAlign: 'left',
+            color: 'inherit',
+            padding: 0,
+            height: 'auto',
+          }}
+        >
+          {isDarkMode ? '浅色模式' : '深色模式'}
+        </Button>
+      ),
+    },
+    {
+      key: 'filters',
+      label: (
+        <div>
+          <div style={{ padding: '8px 0' }}>
+            <div>查询次数筛选:</div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <Input 
+                type="number" 
+                placeholder="最小值" 
+                value={minQueryTimes ?? ''}
+                onChange={(e) => setMinQueryTimes(e.target.value ? parseInt(e.target.value) : undefined)}
+                style={{ width: '80px' }}
+                onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
+              />
+              <span>-</span>
+              <Input 
+                type="number" 
+                placeholder="最大值" 
+                value={maxQueryTimes ?? ''}
+                onChange={(e) => setMaxQueryTimes(e.target.value ? parseInt(e.target.value) : undefined)}
+                style={{ width: '80px' }}
+                onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
+              />
+            </div>
+          </div>
+          <div style={{ padding: '8px 0' }}>
+            <div>删除次数筛选:</div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <Input 
+                type="number" 
+                placeholder="最小值" 
+                value={minDeleteTimes ?? ''}
+                onChange={(e) => setMinDeleteTimes(e.target.value ? parseInt(e.target.value) : undefined)}
+                style={{ width: '80px' }}
+                onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
+              />
+              <span>-</span>
+              <Input 
+                type="number" 
+                placeholder="最大值" 
+                value={maxDeleteTimes ?? ''}
+                onChange={(e) => setMaxDeleteTimes(e.target.value ? parseInt(e.target.value) : undefined)}
+                style={{ width: '80px' }}
+                onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
+              />
+            </div>
+          </div>
+          <div style={{ padding: '8px 0' }}>
+            <Button 
+              type="primary" 
+              onClick={(e) => {
+                e.stopPropagation(); // 防止点击按钮时关闭下拉菜单
+                resetFilters();
+              }}
+              style={{ width: '100%' }}
+            >
+              重置筛选
+            </Button>
+          </div>
+        </div>
+      ),
+    },
+  ];
+
   // 使用统一的主题配置
   const themeConfig = getThemeConfig(isDarkMode);
   const containerStyle = getContainerStyle(themeConfig);
+  const headerStyle = getHeaderStyle(themeConfig);
   const searchStyle = getSearchStyle(themeConfig);
+  const optionsBtnStyle = getOptionsBtnStyle(themeConfig);
 
   return (
     <div style={containerStyle}>
@@ -208,43 +338,108 @@ export const VocabularyBook = () => {
         `}
       </style>
       <div className="theme-provider">
+        <div style={headerStyle}>
+          <h2 style={{ margin: 0, color: themeConfig.textColor }}>单词本</h2>
+          <div>
+            <Dropdown 
+              menu={{ items }} 
+              trigger={['click']}
+              open={isDropdownOpen}
+              onOpenChange={handleDropdownVisibleChange}
+            >
+              <Button style={optionsBtnStyle}>
+                选项 <DownOutlined />
+              </Button>
+            </Dropdown>
+          </div>
+        </div>
         <Input.Search
           placeholder="搜索单词"
           allowClear
           onChange={(e) => setSearchText(e.target.value)}
           style={searchStyle}
         />
-        <Sheet wordsList={words} searchText={searchText} isDarkMode={isDarkMode} themeConfig={themeConfig} />
+        <div style={{ marginTop: '16px' }}>
+          <Sheet 
+            wordsList={words} 
+            searchText={searchText} 
+            isDarkMode={isDarkMode} 
+            themeConfig={themeConfig}
+            minQueryTimes={minQueryTimes}
+            maxQueryTimes={maxQueryTimes}
+            minDeleteTimes={minDeleteTimes}
+            maxDeleteTimes={maxDeleteTimes}
+          />
+        </div>
       </div>
     </div>
   )
 }
 
 // 提取处理单词列表的逻辑到单独的函数中
-const processWordsList = (wordsList: IAllWordsStorage, searchText: string) => {
+const processWordsList = (
+  wordsList: IAllWordsStorage, 
+  searchText: string,
+  minQueryTimes?: number,
+  maxQueryTimes?: number,
+  minDeleteTimes?: number,
+  maxDeleteTimes?: number
+) => {
   return Object.keys(wordsList)
-    .filter((key) =>
-      wordsList[key].word.toLowerCase().includes(searchText.toLowerCase())
-    )
+    .filter((key) => {
+      const word = wordsList[key].word.toLowerCase();
+      const searchMatch = word.includes(searchText.toLowerCase());
+      
+      const queryTimes = wordsList[key].queryTimes;
+      const deleteTimes = wordsList[key].deleteTimes;
+      
+      const queryTimesMatch = (minQueryTimes === undefined || queryTimes >= minQueryTimes) && 
+                             (maxQueryTimes === undefined || queryTimes <= maxQueryTimes);
+                             
+      const deleteTimesMatch = (minDeleteTimes === undefined || deleteTimes >= minDeleteTimes) && 
+                              (maxDeleteTimes === undefined || deleteTimes <= maxDeleteTimes);
+      
+      return searchMatch && queryTimesMatch && deleteTimesMatch;
+    })
     .map((i) => ({
       key: i,
       word: wordsList[i].word,
       queryTimes: wordsList[i].queryTimes,
       deleteTimes: wordsList[i].deleteTimes,
-    }));
+    }))
 };
 
 function Sheet({
   wordsList,
   searchText,
   isDarkMode,
-  themeConfig
-}: { wordsList: IAllWordsStorage; searchText: string; isDarkMode: boolean; themeConfig: any }) {
+  themeConfig,
+  minQueryTimes,
+  maxQueryTimes,
+  minDeleteTimes,
+  maxDeleteTimes
+}: { 
+  wordsList: IAllWordsStorage; 
+  searchText: string; 
+  isDarkMode: boolean; 
+  themeConfig: any;
+  minQueryTimes?: number;
+  maxQueryTimes?: number;
+  minDeleteTimes?: number;
+  maxDeleteTimes?: number;
+}) {
   const [showWords, setShowWords] = useState<IShowWord[]>([])
 
   useEffect(() => {
-    setShowWords(processWordsList(wordsList, searchText));
-  }, [wordsList, searchText])
+    setShowWords(processWordsList(
+      wordsList, 
+      searchText,
+      minQueryTimes,
+      maxQueryTimes,
+      minDeleteTimes,
+      maxDeleteTimes
+    ));
+  }, [wordsList, searchText, minQueryTimes, maxQueryTimes, minDeleteTimes, maxDeleteTimes])
 
   const tableStyle = getTableStyle(themeConfig);
   const cellStyle = getCellStyle(themeConfig);
