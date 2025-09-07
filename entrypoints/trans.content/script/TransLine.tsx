@@ -201,7 +201,9 @@ function HoverTooltip({
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
         border: '1px solid rgba(255, 255, 255, 0.7)',
         maxWidth: '400px',
-        fontFamily: 'inherit',
+        fontFamily: 'Arial, sans-serif', // 固定字体族
+        fontSize: '14px', // 固定字体大小
+        lineHeight: '1.4', // 固定行高
       }}
     >
       {/* 这里是悬停时显示的额外内容 */}
@@ -255,6 +257,14 @@ function HoverTooltip({
         title='删除单词'
         style={{
           background: 'transparent',
+          fontFamily: 'Arial, sans-serif', // 固定字体族
+          fontSize: '18px', // 固定字体大小
+          lineHeight: '1',
+          fontWeight: 'bold',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '0',
+          margin: '0',
         }}
       >
         ×
@@ -301,3 +311,7 @@ export const TooltipPortal = ({
     document.body, // 或者任何其他的 DOM 元素
   );
 };
+
+
+
+
