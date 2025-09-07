@@ -20,7 +20,7 @@ export default defineConfig({
   targetBrowsers: [ 'chrome','firefox' ],
   manifest: {
     description: '记单词的小插件',
-    permissions: [ 'storage', 'activeTab'],
+    permissions: [ 'storage' ],
   },
   webExt: {
     startUrls: [

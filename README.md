@@ -39,7 +39,7 @@ bun run build
 # 其他
 欢迎提交issue,提交pr,或者[聊天吹水](https://github.com/yebei199/meow-memorizing/discussions)
 
-上架谷歌商店申请失败, 可能是因为过于简陋
+上架谷歌商店申请中, 不知道什么时候能通过
 之后的计划是懒得优化, 还是有很多bug, 但够用就行了
 
 ## License
