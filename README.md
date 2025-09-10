@@ -17,7 +17,8 @@
 
 <hr/>
 
-
+# 已上架谷歌商店
+https://chromewebstore.google.com/detail/ginipindgefglbpiaogadmdknaaojdhp?utm_source=item-share-cb
 # 使用方法如下
 
 ![example.gif](https://i.imgur.com/UMXpOQS.gif)
@@ -39,7 +40,6 @@ bun run build
 # 其他
 欢迎提交issue,提交pr,或者[聊天吹水](https://github.com/yebei199/meow-memorizing/discussions)
 
-上架谷歌商店申请中, 不知道什么时候能通过
 之后的计划是懒得优化, 还是有很多bug, 但够用就行了
 
 ## License
