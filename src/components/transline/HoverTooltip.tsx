@@ -4,7 +4,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { processPageWords } from '@/src/content-scripts/textProcessor';
 import {
   addWordLocal,
   queryWord,
