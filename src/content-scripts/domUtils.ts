@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import { TransLine } from '@/src/components/transline';
+import TransLine from '@/src/components/transline/TransLine.tsx';
 
 /**
  * 处理单个文本节点，将匹配的单词用React组件包装

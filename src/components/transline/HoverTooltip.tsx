@@ -30,12 +30,16 @@ import {
  */
 export default function HoverTooltip({
   word,
-  x,
-  y,
 }: {
   word: string;
-  x: number;
-  y: number;
+  style?: {
+    position: string;
+    top: string;
+    left: string;
+    transform: string;
+    marginTop: string;
+    zIndex: number;
+  };
 }) {
   const word3 = word;
   const [wordLocalInfoOuter, setWordLocalInfoOuter] =
@@ -108,23 +112,27 @@ export default function HoverTooltip({
   return (
     <div
       className={
-        'position-absolute overflow-auto z-99 w-90 h-auto rounded-2xl p-6'
+        'position-absolute overflow-auto z-99 rounded-2xl p-6'
       }
       style={{
-        position: 'fixed',
-        left: `${x - 70}px`,
-        top: `${y + 30}px`,
+        position: 'absolute',
+        left: '50%',
+        top: '100%',
         background: 'rgba(255, 255, 255, 0.01)',
         backdropFilter: 'blur(30px)',
         WebkitBackdropFilter: 'blur(30px)',
         borderRadius: '18px',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
         border: '1px solid rgba(255, 255, 255, 0.7)',
-        maxWidth: '400px',
+        width: '300px', // 固定宽度为300px
+        minWidth: '300px',
+        maxWidth: '300px',
         fontFamily: 'Arial, sans-serif',
         fontSize: '14px',
         lineHeight: '1.4',
         zIndex: 9999,
+        transform: 'translateX(-50%)', // 居中对齐
+        marginTop: '5px', // 单词下方5px的间距
       }}
     >
       {panelContent}

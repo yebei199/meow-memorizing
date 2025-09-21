@@ -8,30 +8,23 @@ import {
 } from 'react';
 import HoverTooltip from './HoverTooltip';
 
-/*
- * @description 组合悬停前和后两个组件,逻辑是鼠标悬停时显示额外内容,
- * 当鼠标离开的时候悬停组件卸载,这样性能更好
- * @param originalWord 原始格式的单词（保持原有大小写）
- * @param lowerCaseWord 小写格式的单词（用于查询）
- * @example <T2 originalWord={'Hello'} lowerCaseWord={'hello'} />
- *
- */
-
-export default function T2({
-  originalWord,
-  lowerCaseWord,
-}: {
+interface WordHighlighterProps {
   originalWord: string;
   lowerCaseWord: string;
-}) {
+}
+
+function WordHighlighter({
+  originalWord,
+  lowerCaseWord,
+}: WordHighlighterProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{
     x: number;
     y: number;
   }>({ x: 0, y: 0 });
-  const [hasTriggered, setHasTriggered] = useState(false); // 新增的状态，用于跟踪是否已经触发过 mouseenter 事件
-  const timeoutId = useRef<number | null>(null); // 用于存储 setTimeout 的 ID
-  const hoverTimeoutId = useRef<number | null>(null); // 用于存储悬停显示的 setTimeout ID
+  const [hasTriggered, setHasTriggered] = useState(false);
+  const timeoutId = useRef<number | null>(null);
+  const hoverTimeoutId = useRef<number | null>(null);
 
   const handleMouseEnter = useCallback(
     (
@@ -46,7 +39,6 @@ export default function T2({
           y: event.pageY,
         });
 
-        // 添加延迟显示，避免快速移动鼠标时的闪烁
         hoverTimeoutId.current = window.setTimeout(() => {
           setIsHovered(true);
           setHasTriggered(true);
@@ -61,19 +53,16 @@ export default function T2({
   );
 
   const handleMouseLeave = useCallback(() => {
-    // 清除悬停显示的定时器
     if (hoverTimeoutId.current) {
       clearTimeout(hoverTimeoutId.current);
     }
 
-    // 延迟卸载,避免闪烁
     timeoutId.current = window.setTimeout(() => {
       setIsHovered(false);
-      setHasTriggered(false); // 重置触发状态，以便下次可以重新触发
+      setHasTriggered(false);
     }, 300);
   }, []);
 
-  // 使用useMemo优化组件渲染
   const tooltipComponent = useMemo(() => {
     return isHovered ? (
       <HoverTooltip
@@ -90,7 +79,6 @@ export default function T2({
   ]);
 
   useEffect(() => {
-    // 清理定时器
     return () => {
       if (timeoutId.current) {
         clearTimeout(timeoutId.current);
@@ -113,8 +101,8 @@ export default function T2({
         font: 'inherit',
         cursor: 'pointer',
         position: 'relative',
-        display: 'inline', // 确保表现为内联元素
-        verticalAlign: 'baseline', // 保持基线对齐
+        display: 'inline',
+        verticalAlign: 'baseline',
       }}
       type='button'
     >
@@ -142,5 +130,29 @@ export default function T2({
       </span>
       {tooltipComponent}
     </button>
+  );
+}
+
+/*
+ * @description 组合悬停前和后两个组件,逻辑是鼠标悬停时显示额外内容,
+ * 当鼠标离开的时候悬停组件卸载,这样性能更好
+ * @param originalWord 原始格式的单词（保持原有大小写）
+ * @param lowerCaseWord 小写格式的单词（用于查询）
+ * @example <T2 originalWord={'Hello'} lowerCaseWord={'hello'} />
+ *
+ */
+
+export default function T2({
+  originalWord,
+  lowerCaseWord,
+}: {
+  originalWord: string;
+  lowerCaseWord: string;
+}) {
+  return (
+    <WordHighlighter
+      originalWord={originalWord}
+      lowerCaseWord={lowerCaseWord}
+    />
   );
 }
