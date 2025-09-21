@@ -1,9 +1,3 @@
-import type { IWordQuery } from '@/entrypoints/trans.content/script/TransLine.tsx'
-import { defineExtensionMessaging } from '@webext-core/messaging'
-
-interface ProtocolMap {
-  trans(data: IWordQuery): string
-}
-
-export const { sendMessage, onMessage } =
-  defineExtensionMessaging<ProtocolMap>()
+// 从新核心模块重新导出类型和消息函数
+export type { IWordQuery } from './core/types'
+export { sendMessage, onMessage } from './core/messaging'
