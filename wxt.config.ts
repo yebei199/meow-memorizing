@@ -1,9 +1,8 @@
-import { defineConfig } from 'wxt'
+import { defineConfig } from 'wxt';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
-  // entrypointLoader: 'jiti',
   vite: () => ({
     ssr: {
       noExternal: [
@@ -12,19 +11,15 @@ export default defineConfig({
         '@webext-core/proxy-service',
       ],
     },
-
-
-
-
   }),
-  targetBrowsers: [ 'chrome','firefox' ],
+  targetBrowsers: ['chrome', 'firefox'],
   manifest: {
     description: '记单词的小插件',
-    permissions: [ 'storage' ],
+    permissions: ['storage'],
   },
   webExt: {
     startUrls: [
       'https://wxt.dev/get-started/migrate-to-wxt.html',
     ],
   },
-})
+});

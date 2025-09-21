@@ -1,12 +1,9 @@
-import { getWordsList } from '@/entrypoints/trans.content/script/storageAction.ts'
-import type {
-  IAllWordsStorage,
-  IWordStorage,
-} from '@/src/wxtStore.ts'
+import { getWordsList } from '@/src/core/storageManager'
+import type { IAllWordsStorage, IWordStorage } from '@/src/core/types'
 import type { TableColumnsType } from 'antd'
 import { Button, Dropdown, Input, MenuProps, Table } from 'antd'
 import { useEffect, useState } from 'react'
-import { isWebsiteDarkMode } from '@/src/wxtStore.ts'
+import { getCurrentWebsiteDarkMode, updateWebsiteDarkMode } from '@/src/core/themeDetector'
 import { DownOutlined } from '@ant-design/icons'
 
 // 提取主题配置到组件外部，避免每次渲染都重新创建
@@ -25,7 +22,7 @@ const getThemeConfig = (isDarkMode: boolean) => ({
   paginationItemBackground: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5',
   paginationItemHoverBackground: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : '#e0e0e0',
   paginationItemActiveBackground: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : '#d0d0d0',
-});
+})
 
 // 提取样式计算函数，降低组件内部复杂度
 const getContainerStyle = (themeConfig: any) => ({
@@ -37,7 +34,7 @@ const getContainerStyle = (themeConfig: any) => ({
   color: themeConfig.textColor,
   minHeight: '100vh',
   fontFamily: 'sans-serif'
-});
+})
 
 // 顶部栏样式
 const getHeaderStyle = (themeConfig: any) => ({
@@ -47,7 +44,7 @@ const getHeaderStyle = (themeConfig: any) => ({
   marginBottom: '16px',
   paddingBottom: '12px',
   borderBottom: `1px solid ${themeConfig.borderColor}`,
-});
+})
 
 // 搜索框样式
 const getSearchStyle = (themeConfig: any) => ({
@@ -58,7 +55,7 @@ const getSearchStyle = (themeConfig: any) => ({
   borderRadius: '4px',
   outline: 'none',
   transition: 'all 0.3s ease',
-});
+})
 
 // 选项按钮样式
 const getOptionsBtnStyle = (themeConfig: any) => ({
@@ -68,13 +65,13 @@ const getOptionsBtnStyle = (themeConfig: any) => ({
   display: 'flex',
   alignItems: 'center',
   gap: '4px',
-});
+})
 
 // 添加新的样式函数
 const getTableHeaderStyle = (themeConfig: any) => ({
   background: themeConfig.headerBackground,
   color: themeConfig.textColor,
-});
+})
 
 const getTableStyle = (themeConfig: any) => ({
   width: '100%',
@@ -84,21 +81,20 @@ const getTableStyle = (themeConfig: any) => ({
   boxShadow: themeConfig.boxShadow,
   borderRadius: '8px',
   overflow: 'hidden',
-});
+})
 
 const getCellStyle = (themeConfig: any) => ({
   color: themeConfig.textColor,
   backgroundColor: themeConfig.backgroundColor,
   border: `1px solid ${themeConfig.borderColor}`,
   padding: '8px',
-});
+})
 
 export const VocabularyBook = () => {
   // 移除 console.log 降低复杂度
   const defaultWords: IAllWordsStorage = {}
 
-  const [words, setWords] =
-    useState<IAllWordsStorage>(defaultWords)
+  const [words, setWords] = useState<IAllWordsStorage>(defaultWords)
   const [searchText, setSearchText] = useState('')
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [minQueryTimes, setMinQueryTimes] = useState<number | undefined>(undefined)
@@ -110,16 +106,18 @@ export const VocabularyBook = () => {
   // 检测系统主题
   useEffect(() => {
     const checkDarkMode = async () => {
-      // 从WXT存储中获取当前网站的颜色模式
-      const isDark = await isWebsiteDarkMode.getValue();
-      setIsDarkMode(isDark);
-    };
+      // 从存储中获取当前网站的颜色模式
+      const isDark = await getCurrentWebsiteDarkMode()
+      setIsDarkMode(isDark)
+    }
 
-    checkDarkMode().catch(console.error);
+    checkDarkMode().catch(console.error)
   }, [])
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
+  const toggleDarkMode = async () => {
+    const newMode = !isDarkMode
+    setIsDarkMode(newMode)
+    await updateWebsiteDarkMode()
   }
 
   const resetFilters = () => {
@@ -131,7 +129,7 @@ export const VocabularyBook = () => {
 
   const handleDropdownVisibleChange = (flag: boolean) => {
     // 只有当不是因为点击输入框而触发的关闭事件时，才更新下拉菜单状态
-    setIsDropdownOpen(flag);
+    setIsDropdownOpen(flag)
   }
 
   useEffect(() => {
@@ -175,18 +173,18 @@ export const VocabularyBook = () => {
           <div style={{ padding: '8px 0' }}>
             <div>查询次数筛选:</div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <Input 
-                type="number" 
-                placeholder="最小值" 
+              <Input
+                type="number"
+                placeholder="最小值"
                 value={minQueryTimes ?? ''}
                 onChange={(e) => setMinQueryTimes(e.target.value ? parseInt(e.target.value) : undefined)}
                 style={{ width: '80px' }}
                 onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
               />
               <span>-</span>
-              <Input 
-                type="number" 
-                placeholder="最大值" 
+              <Input
+                type="number"
+                placeholder="最大值"
                 value={maxQueryTimes ?? ''}
                 onChange={(e) => setMaxQueryTimes(e.target.value ? parseInt(e.target.value) : undefined)}
                 style={{ width: '80px' }}
@@ -197,18 +195,18 @@ export const VocabularyBook = () => {
           <div style={{ padding: '8px 0' }}>
             <div>删除次数筛选:</div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <Input 
-                type="number" 
-                placeholder="最小值" 
+              <Input
+                type="number"
+                placeholder="最小值"
                 value={minDeleteTimes ?? ''}
                 onChange={(e) => setMinDeleteTimes(e.target.value ? parseInt(e.target.value) : undefined)}
                 style={{ width: '80px' }}
                 onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
               />
               <span>-</span>
-              <Input 
-                type="number" 
-                placeholder="最大值" 
+              <Input
+                type="number"
+                placeholder="最大值"
                 value={maxDeleteTimes ?? ''}
                 onChange={(e) => setMaxDeleteTimes(e.target.value ? parseInt(e.target.value) : undefined)}
                 style={{ width: '80px' }}
@@ -217,11 +215,11 @@ export const VocabularyBook = () => {
             </div>
           </div>
           <div style={{ padding: '8px 0' }}>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               onClick={(e) => {
-                e.stopPropagation(); // 防止点击按钮时关闭下拉菜单
-                resetFilters();
+                e.stopPropagation() // 防止点击按钮时关闭下拉菜单
+                resetFilters()
               }}
               style={{ width: '100%' }}
             >
@@ -231,14 +229,14 @@ export const VocabularyBook = () => {
         </div>
       ),
     },
-  ];
+  ]
 
   // 使用统一的主题配置
-  const themeConfig = getThemeConfig(isDarkMode);
-  const containerStyle = getContainerStyle(themeConfig);
-  const headerStyle = getHeaderStyle(themeConfig);
-  const searchStyle = getSearchStyle(themeConfig);
-  const optionsBtnStyle = getOptionsBtnStyle(themeConfig);
+  const themeConfig = getThemeConfig(isDarkMode)
+  const containerStyle = getContainerStyle(themeConfig)
+  const headerStyle = getHeaderStyle(themeConfig)
+  const searchStyle = getSearchStyle(themeConfig)
+  const optionsBtnStyle = getOptionsBtnStyle(themeConfig)
 
   return (
     <div style={containerStyle}>
@@ -341,8 +339,8 @@ export const VocabularyBook = () => {
         <div style={headerStyle}>
           <h2 style={{ margin: 0, color: themeConfig.textColor }}>单词本</h2>
           <div>
-            <Dropdown 
-              menu={{ items }} 
+            <Dropdown
+              menu={{ items }}
               trigger={['click']}
               open={isDropdownOpen}
               onOpenChange={handleDropdownVisibleChange}
@@ -360,10 +358,10 @@ export const VocabularyBook = () => {
           style={searchStyle}
         />
         <div style={{ marginTop: '16px' }}>
-          <Sheet 
-            wordsList={words} 
-            searchText={searchText} 
-            isDarkMode={isDarkMode} 
+          <Sheet
+            wordsList={words}
+            searchText={searchText}
+            isDarkMode={isDarkMode}
             themeConfig={themeConfig}
             minQueryTimes={minQueryTimes}
             maxQueryTimes={maxQueryTimes}
@@ -378,7 +376,7 @@ export const VocabularyBook = () => {
 
 // 提取处理单词列表的逻辑到单独的函数中
 const processWordsList = (
-  wordsList: IAllWordsStorage, 
+  wordsList: IAllWordsStorage,
   searchText: string,
   minQueryTimes?: number,
   maxQueryTimes?: number,
@@ -387,19 +385,19 @@ const processWordsList = (
 ) => {
   return Object.keys(wordsList)
     .filter((key) => {
-      const word = wordsList[key].word.toLowerCase();
-      const searchMatch = word.includes(searchText.toLowerCase());
-      
-      const queryTimes = wordsList[key].queryTimes;
-      const deleteTimes = wordsList[key].deleteTimes;
-      
-      const queryTimesMatch = (minQueryTimes === undefined || queryTimes >= minQueryTimes) && 
-                             (maxQueryTimes === undefined || queryTimes <= maxQueryTimes);
-                             
-      const deleteTimesMatch = (minDeleteTimes === undefined || deleteTimes >= minDeleteTimes) && 
-                              (maxDeleteTimes === undefined || deleteTimes <= maxDeleteTimes);
-      
-      return searchMatch && queryTimesMatch && deleteTimesMatch;
+      const word = wordsList[key].word.toLowerCase()
+      const searchMatch = word.includes(searchText.toLowerCase())
+
+      const queryTimes = wordsList[key].queryTimes
+      const deleteTimes = wordsList[key].deleteTimes
+
+      const queryTimesMatch = (minQueryTimes === undefined || queryTimes >= minQueryTimes) &&
+                             (maxQueryTimes === undefined || queryTimes <= maxQueryTimes)
+
+      const deleteTimesMatch = (minDeleteTimes === undefined || deleteTimes >= minDeleteTimes) &&
+                              (maxDeleteTimes === undefined || deleteTimes <= maxDeleteTimes)
+
+      return searchMatch && queryTimesMatch && deleteTimesMatch && !wordsList[key].isDeleted
     })
     .map((i) => ({
       key: i,
@@ -407,7 +405,7 @@ const processWordsList = (
       queryTimes: wordsList[i].queryTimes,
       deleteTimes: wordsList[i].deleteTimes,
     }))
-};
+}
 
 function Sheet({
   wordsList,
@@ -418,32 +416,32 @@ function Sheet({
   maxQueryTimes,
   minDeleteTimes,
   maxDeleteTimes
-}: { 
-  wordsList: IAllWordsStorage; 
-  searchText: string; 
-  isDarkMode: boolean; 
-  themeConfig: any;
-  minQueryTimes?: number;
-  maxQueryTimes?: number;
-  minDeleteTimes?: number;
-  maxDeleteTimes?: number;
+}: {
+  wordsList: IAllWordsStorage
+  searchText: string
+  isDarkMode: boolean
+  themeConfig: any
+  minQueryTimes?: number
+  maxQueryTimes?: number
+  minDeleteTimes?: number
+  maxDeleteTimes?: number
 }) {
   const [showWords, setShowWords] = useState<IShowWord[]>([])
 
   useEffect(() => {
     setShowWords(processWordsList(
-      wordsList, 
+      wordsList,
       searchText,
       minQueryTimes,
       maxQueryTimes,
       minDeleteTimes,
       maxDeleteTimes
-    ));
+    ))
   }, [wordsList, searchText, minQueryTimes, maxQueryTimes, minDeleteTimes, maxDeleteTimes])
 
-  const tableStyle = getTableStyle(themeConfig);
-  const cellStyle = getCellStyle(themeConfig);
-  const headerStyle = getTableHeaderStyle(themeConfig); // 新增表头样式
+  const tableStyle = getTableStyle(themeConfig)
+  const cellStyle = getCellStyle(themeConfig)
+  const headerStyle = getTableHeaderStyle(themeConfig) // 新增表头样式
 
   const columns: TableColumnsType<IShowWord> = [
     {
@@ -495,9 +493,10 @@ function Sheet({
           showSizeChanger: true,
           size: 'small'
         }}
-        className={'custom-row-10'}
-        rowClassName='h-0.01'
-        style={tableStyle}
+        className="custom-row-10"
+        // 移除可能不存在的自定义类名，改用内联样式控制表格行高
+        style={{ ...tableStyle, height: 'auto' }}
+        rowClassName={() => 'vocabulary-table-row'}
         // 添加表头样式
         components={{
           header: {
@@ -524,14 +523,4 @@ export interface IShowWord {
   word: string
   queryTimes: number
   deleteTimes: number
-}
-
-/**
- * ant table 单词列表的列接口
- */
-export interface IColumn {
-  title: string
-  dataIndex: string
-  key: string
-  width?: number
 }
