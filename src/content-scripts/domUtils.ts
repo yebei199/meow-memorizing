@@ -12,19 +12,18 @@ export function getAllTextNodes(): Text[] {
     document.body,
     NodeFilter.SHOW_TEXT,
     {
-      acceptNode: function(node) {
+      acceptNode: (node) => {
         // 检查父元素是否属于翻译面板
         let parent = node.parentElement;
         while (parent) {
           // 检查是否是翻译面板相关的元素
           if (
             parent.hasAttribute('data-word') ||
-            (parent instanceof HTMLElement && (
+            (parent instanceof HTMLElement &&
               // 检查是否有面板相关的样式特征
-              parent.style.position === 'absolute' && 
-              parent.style.zIndex && 
-              parseInt(parent.style.zIndex) > 1000
-            )) ||
+              parent.style.position === 'absolute' &&
+              parent.style.zIndex &&
+              parseInt(parent.style.zIndex, 10) > 1000) ||
             // 检查是否是React组件根节点
             parent.hasAttribute('data-reactroot')
           ) {
@@ -32,7 +31,7 @@ export function getAllTextNodes(): Text[] {
           }
           parent = parent.parentElement;
         }
-        
+
         // 检查文本节点本身是否有效
         if (
           node.nodeType === Node.TEXT_NODE &&
@@ -41,9 +40,9 @@ export function getAllTextNodes(): Text[] {
         ) {
           return NodeFilter.FILTER_ACCEPT;
         }
-        
+
         return NodeFilter.FILTER_REJECT;
-      }
+      },
     },
   );
 
@@ -161,27 +160,29 @@ export async function processTextNode(
  */
 export function restoreOriginalTextNode(
   container: Element,
-  word: string
+  word: string,
 ): void {
   // 查找包含特定单词的元素
-  const wordElements = container.querySelectorAll(`p[data-word="${word.toLowerCase()}"]`);
-  
+  const wordElements = container.querySelectorAll(
+    `p[data-word="${word.toLowerCase()}"]`,
+  );
+
   // 从后往前遍历，避免在修改DOM时影响NodeList
   for (let i = wordElements.length - 1; i >= 0; i--) {
     const wordElement = wordElements[i];
     const parent = wordElement.parentNode;
     if (!parent) continue;
-    
+
     // 获取原始文本
     const originalText = wordElement.textContent || '';
-    
+
     // 创建文本节点替换React组件
     const textNode = document.createTextNode(originalText);
-    
+
     // 卸载React组件
     const root = createRoot(wordElement);
     root.unmount();
-    
+
     // 替换节点
     parent.replaceChild(textNode, wordElement);
   }
