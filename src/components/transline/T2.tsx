@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react';
 import HoverTooltip from './HoverTooltip';
+import { queryWord } from '@/src/core/storageManager';
 
 interface WordHighlighterProps {
   originalWord: string;
@@ -23,8 +24,38 @@ function WordHighlighter({
     y: number;
   }>({ x: 0, y: 0 });
   const [hasTriggered, setHasTriggered] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
   const timeoutId = useRef<number | null>(null);
   const hoverTimeoutId = useRef<number | null>(null);
+
+  // 检查单词是否已被删除
+  useEffect(() => {
+    const checkWordStatus = async () => {
+      const wordInfo = await queryWord(lowerCaseWord);
+      if (wordInfo && wordInfo.isDeleted) {
+        setIsDeleted(true);
+      }
+    };
+    
+    checkWordStatus();
+  }, [lowerCaseWord]);
+
+  // 监听删除事件
+  useEffect(() => {
+    const handleDelete = (event: CustomEvent) => {
+      if (event.detail === lowerCaseWord) {
+        // 单词被删除，隐藏tooltip并标记为已删除
+        setIsHovered(false);
+        setHasTriggered(false);
+        setIsDeleted(true);
+      }
+    };
+    
+    window.addEventListener('deleteWord', handleDelete as EventListener);
+    return () => {
+      window.removeEventListener('deleteWord', handleDelete as EventListener);
+    };
+  }, [lowerCaseWord]);
 
   const handleMouseEnter = useCallback(
     (
@@ -33,6 +64,9 @@ function WordHighlighter({
         MouseEvent
       >,
     ): void => {
+      // 如果单词已被删除，则不显示tooltip
+      if (isDeleted) return;
+      
       if (!hasTriggered) {
         setTooltipPosition({
           x: event.pageX,
@@ -49,7 +83,7 @@ function WordHighlighter({
         clearTimeout(timeoutId.current);
       }
     },
-    [hasTriggered],
+    [hasTriggered, isDeleted],
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -88,6 +122,11 @@ function WordHighlighter({
       }
     };
   }, []);
+
+  // 如果单词已被删除，渲染原始文本而不是带下划线的单词
+  if (isDeleted) {
+    return <span>{originalWord}</span>;
+  }
 
   return (
     <button

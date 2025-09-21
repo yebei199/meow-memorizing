@@ -75,6 +75,15 @@ export async function fetchData(
   >,
   CACHE_EXPIRY: number,
 ) {
+  // 检查单词是否已被删除
+  const wordInfo = await queryWord(word);
+  if (wordInfo && wordInfo.isDeleted) {
+    setWordLocalInfoOuter(wordInfo);
+    setDataEnd('该单词已被删除，不再显示翻译');
+    setLoading(false);
+    return;
+  }
+  
   const wordLocalInfo = await queryWord(word);
   if (!wordLocalInfo) return;
 
@@ -182,6 +191,7 @@ async function fetchAndProcessNetworkData(
     setLoading(false);
   }
 
+  // 更新查询次数
   if (wordLocalInfo) {
     wordLocalInfo.queryTimes += 1;
     setWordLocalInfoOuter(wordLocalInfo);

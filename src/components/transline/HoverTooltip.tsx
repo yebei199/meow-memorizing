@@ -5,8 +5,8 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { processPageWords } from '@/src/content-scripts/ergodicWords.tsx';
-import { addWordLocal } from '@/src/core/storageManager';
+import { processPageWords } from '@/src/content-scripts/textProcessor';
+import { addWordLocal, queryWord } from '@/src/core/storageManager';
 import type { IWordStorage } from '@/src/core/types';
 import {
   addQueriedWord,
@@ -49,23 +49,26 @@ export default function HoverTooltip({
 
   const handleDeleteWord = useCallback(async () => {
     if (wordLocalInfoOuter) {
-      await deleteWord(wordLocalInfoOuter.word);
-      setWordLocalInfoOuter({
-        ...wordLocalInfoOuter,
-        isDeleted: true,
-        deleteTimes: wordLocalInfoOuter.deleteTimes + 1,
-      });
-      await processPageWords();
+      // 先隐藏面板，然后再删除单词
+      const event = new CustomEvent('deleteWord', { detail: wordLocalInfoOuter.word });
+      window.dispatchEvent(event);
+      
+      // 延迟一小段时间确保面板被卸载后再删除单词
+      setTimeout(async () => {
+        await deleteWord(wordLocalInfoOuter.word);
+        // deleteWord函数内部已经调用了restoreOriginalTextNode来恢复单词为原始状态
+        // 不需要再调用processPageWords
+      }, 10);
     }
   }, [wordLocalInfoOuter]);
 
   const handleAddQuery = useCallback(async () => {
     if (wordLocalInfoOuter) {
       await addQueriedWord(wordLocalInfoOuter.word);
-      setWordLocalInfoOuter({
-        ...wordLocalInfoOuter,
-        queryTimes: wordLocalInfoOuter.queryTimes + 1,
-      });
+      const updatedWordInfo = await queryWord(wordLocalInfoOuter.word);
+      if (updatedWordInfo) {
+        setWordLocalInfoOuter(updatedWordInfo);
+      }
     }
   }, [wordLocalInfoOuter]);
 
@@ -77,7 +80,7 @@ export default function HoverTooltip({
       setWordLocalInfoOuter,
       addWordLocal,
       deleteWord,
-      processPageWords,
+      () => Promise.resolve(), // 不再需要处理页面单词
       translationCache,
       CACHE_EXPIRY,
     ).catch(console.error);
@@ -109,6 +112,20 @@ export default function HoverTooltip({
     handleDeleteWord,
   ]);
 
+  // 监听删除事件，隐藏面板
+  useEffect(() => {
+    const handleDelete = (event: CustomEvent) => {
+      if (event.detail === word) {
+        // 隐藏面板的逻辑可以在这里添加
+      }
+    };
+    
+    window.addEventListener('deleteWord', handleDelete as EventListener);
+    return () => {
+      window.removeEventListener('deleteWord', handleDelete as EventListener);
+    };
+  }, [word]);
+
   return (
     <div
       className={
@@ -136,27 +153,6 @@ export default function HoverTooltip({
       }}
     >
       {panelContent}
-      <button
-        type='button'
-        className={
-          'absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-red-500 font-bold transition-all hover:bg-red-100'
-        }
-        onClick={handleDeleteWord}
-        title='删除单词'
-        style={{
-          background: 'transparent',
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '18px',
-          lineHeight: '1',
-          fontWeight: 'bold',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '0',
-          margin: '0',
-        }}
-      >
-        ×
-      </button>
     </div>
   );
 }

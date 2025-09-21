@@ -24,13 +24,50 @@ export function LoadedPanel({
   handleDeleteWord: () => void;
 }) {
   return (
-    <>
+    <div style={{ position: 'relative' }}>
+      {/* 删除按钮 - 红色X在右上角 */}
+      <button
+        type='button'
+        onClick={handleDeleteWord}
+        title='删除单词（不再查询该单词）'
+        style={{
+          position: 'absolute',
+          top: '0',
+          right: '0',
+          width: '24px',
+          height: '24px',
+          backgroundColor: 'transparent',
+          border: 'none',
+          color: '#ff4444',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          borderRadius: '50%',
+          transition: 'background-color 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor =
+            'rgba(255, 0, 0, 0.1)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor =
+            'transparent';
+        }}
+      >
+        ×
+      </button>
+
       <h1
         className={'text-center text-xl font-bold mb-3'}
         style={{
           color: 'inherit',
           fontFamily: 'inherit',
           textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)',
+          paddingRight: '24px', // 为右上角的X按钮留出空间
         }}
       >
         {word}
@@ -56,29 +93,22 @@ export function LoadedPanel({
             {wordLocalInfoOuter?.queryTimes}
           </span>
         </span>
-      </span>
-      <div className='flex justify-between mt-2'>
         <button
           type='button'
-          className={
-            'px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600'
-          }
           onClick={handleAddQuery}
-          title='增加查询次数'
+          style={{
+            background: 'transparent',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            padding: '2px 6px',
+            cursor: 'pointer',
+            color: 'inherit',
+            fontSize: '12px',
+          }}
         >
-          +1 查询
+          +1
         </button>
-        <button
-          type='button'
-          className={
-            'px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600'
-          }
-          onClick={handleDeleteWord}
-          title='删除单词'
-        >
-          删除单词
-        </button>
-      </div>
-    </>
+      </span>
+    </div>
   );
 }

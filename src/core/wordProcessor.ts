@@ -1,6 +1,7 @@
 import LiePromise from 'lie'
 import { addWordLocal, queryWord } from './storageManager'
 import type { IWordStorage } from './types'
+import { restoreOriginalTextNode } from '@/src/content-scripts/domUtils'
 
 /**
  * 过滤单词是否有效
@@ -29,10 +30,9 @@ export async function addQueriedWord(word: string): Promise<void> {
   const existingWord: IWordStorage | undefined = await queryWord(cleanWord)
 
   if (existingWord) {
-    // 如果单词已经在本地存储中，但删除状态为true，更新查询次数
+    // 如果单词已经在本地存储中，确保它未被标记为删除
     existingWord.queryTimes += 1
     existingWord.isDeleted = false
-    existingWord.deleteTimes += 1
     await addWordLocal(existingWord)
   } else {
     // 创建新单词记录
@@ -61,6 +61,9 @@ export async function deleteWord(word: string): Promise<void> {
       deleteTimes: existingWord.deleteTimes + 1,
     }
     await addWordLocal(updatedWordInfo)
+    
+    // 立即恢复页面中所有该单词到原始状态
+    restoreOriginalTextNode(document.body, cleanWord);
   }
 }
 

@@ -1,6 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import TransLine from '@/src/components/transline/TransLine.tsx';
 
+// 用于存储原始文本节点的WeakMap
+const originalTextMap = new WeakMap<Text, string>();
+
 /**
  * 处理单个文本节点，将匹配的单词用React组件包装
  */
@@ -14,6 +17,11 @@ export async function processTextNode(
 ): Promise<void> {
   const text = textNode.textContent || '';
   if (!text.trim()) return;
+
+  // 保存原始文本内容
+  if (!originalTextMap.has(textNode)) {
+    originalTextMap.set(textNode, text);
+  }
 
   // 检查父元素是否已经处理过
   const parent = textNode.parentNode;
@@ -90,6 +98,37 @@ export async function processTextNode(
 
   // 替换原文本节点
   parent.replaceChild(fragment, textNode);
+}
+
+/**
+ * 恢复文本节点到原始状态（用于删除单词时）
+ */
+export function restoreOriginalTextNode(
+  container: Element,
+  word: string
+): void {
+  // 查找包含特定单词的元素
+  const wordElements = container.querySelectorAll(`p[data-word="${word.toLowerCase()}"]`);
+  
+  // 从后往前遍历，避免在修改DOM时影响NodeList
+  for (let i = wordElements.length - 1; i >= 0; i--) {
+    const wordElement = wordElements[i];
+    const parent = wordElement.parentNode;
+    if (!parent) continue;
+    
+    // 获取原始文本
+    const originalText = wordElement.textContent || '';
+    
+    // 创建文本节点替换React组件
+    const textNode = document.createTextNode(originalText);
+    
+    // 卸载React组件
+    const root = createRoot(wordElement);
+    root.unmount();
+    
+    // 替换节点
+    parent.replaceChild(textNode, wordElement);
+  }
 }
 
 /**

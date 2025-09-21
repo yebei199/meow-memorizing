@@ -1,5 +1,9 @@
 import { getWordsList } from '@/src/core/storageManager'
-import { getAllTextNodes, processTextNode } from './domUtils'
+import {
+  getAllTextNodes,
+  processTextNode,
+  restoreOriginalTextNode
+} from './domUtils'
 import { findMatchingWords } from './wordMatcher'
 
 /**
