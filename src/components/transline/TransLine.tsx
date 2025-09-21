@@ -1,5 +1,5 @@
-import T2 from './T2';
 import { queryWord } from '@/src/core/storageManager';
+import T2 from './T2';
 
 /**
  * @description 对于每个单词的翻译准备以及鼠标悬停时显示额外内容的组件
@@ -15,13 +15,6 @@ export default function TransLine({
   lowerCaseWord: string;
 }) {
   // 检查单词是否已被删除
-  const checkWordDeleted = async () => {
-    const wordInfo = await queryWord(lowerCaseWord);
-    if (wordInfo && wordInfo.isDeleted) {
-      // 如果单词已被删除，直接返回普通文本而不是组件
-      return null;
-    }
-  };
 
   // 不需要等待异步操作完成，因为我们只在渲染时检查
   // 如果单词被删除，我们应该在T2组件中处理
