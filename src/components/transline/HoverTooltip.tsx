@@ -5,17 +5,22 @@ import {
   useMemo,
   useState,
 } from 'react';
-import {
-  addWordLocal,
-} from '@/src/core/storageManager';
+import { processPageWords } from '@/src/content-scripts/ergodicWords.tsx';
+import { addWordLocal } from '@/src/core/storageManager';
 import type { IWordStorage } from '@/src/core/types';
 import {
   addQueriedWord,
   deleteWord,
 } from '@/src/core/wordProcessor';
-import { processPageWords } from '@/entrypoints/trans.content/script/ergodicWords';
-import { fetchData, translationCache, CACHE_EXPIRY } from './transUtils';
-import { LoadingPanel, LoadedPanel } from './PanelComponents';
+import {
+  LoadedPanel,
+  LoadingPanel,
+} from './PanelComponents';
+import {
+  CACHE_EXPIRY,
+  fetchData,
+  translationCache,
+} from './transUtils';
 
 /**
  * @description 鼠标悬停时显示额外内容
@@ -147,4 +152,3 @@ export default function HoverTooltip({
     </div>
   );
 }
-

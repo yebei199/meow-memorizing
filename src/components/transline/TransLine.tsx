@@ -1,4 +1,3 @@
-import type React from 'react';
 import T2 from './T2';
 
 /**

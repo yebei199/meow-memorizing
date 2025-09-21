@@ -1,5 +1,5 @@
-import { processPageWords } from '@/entrypoints/trans.content/script/ergodicWords'
-import { addQueriedWord, filterWord } from '@/src/core/wordProcessor'
+import { processPageWords } from './ergodicWords';
+import { addQueriedWord, filterWord } from '@/src/core/wordProcessor';
 
 /**
  * 监听鼠标抬起事件，选择文本并添加到本地存储

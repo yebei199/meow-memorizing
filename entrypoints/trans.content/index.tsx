@@ -1,6 +1,6 @@
-import '@/public/global.css'
-import { initThemeObserver } from '@/src/core/themeDetector'
-import { startTranslation } from '@/entrypoints/trans.content/script/startTrans'
+import '@/public/global.css';
+import { startTranslation } from '@/src/content-scripts/startTrans.ts';
+import { initThemeObserver } from '@/src/core/themeDetector';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -8,9 +8,9 @@ export default defineContentScript({
   runAt: 'document_end',
   async main() {
     // 初始化主题观察器
-    initThemeObserver()
-    
+    initThemeObserver();
+
     // 启动翻译功能
-    startTranslation().catch(console.error)
+    startTranslation().catch(console.error);
   },
-})
+});

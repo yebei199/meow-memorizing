@@ -1,4 +1,3 @@
-import type React from 'react';
 import type { IWordStorage } from '@/src/core/types';
 
 // 加载中面板组件

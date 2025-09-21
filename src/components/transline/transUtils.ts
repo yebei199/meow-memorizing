@@ -1,8 +1,5 @@
-import type { IWordStorage } from '@/src/core/types';
 import { sendMessage } from '@/src/core/messaging';
 import { queryWord } from '@/src/core/storageManager';
-import { processPageWords } from '@/entrypoints/trans.content/script/ergodicWords';
-import { deleteWord } from '@/src/core/wordProcessor';
 
 // 创建翻译缓存，直接使用对象类型避免额外的接口定义
 export const translationCache = new Map<
