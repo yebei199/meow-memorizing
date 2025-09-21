@@ -1,37 +1,85 @@
 import type React from 'react';
 import {
-  type ReactElement,
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
-import { sendMessage } from '@/src/core/messaging';
-import { addWordLocal, queryWord } from '@/src/core/storageManager';
-import type { IWordStorage } from '@/src/core/types';
-import { deleteWord, addQueriedWord } from '@/src/core/wordProcessor';
 import { processPageWords } from '@/entrypoints/trans.content/script/ergodicWords';
+import { sendMessage } from '@/src/core/messaging';
+import {
+  addWordLocal,
+  queryWord,
+} from '@/src/core/storageManager';
+import type { IWordStorage } from '@/src/core/types';
+import {
+  addQueriedWord,
+  deleteWord,
+} from '@/src/core/wordProcessor';
+
+// 创建翻译缓存，直接使用对象类型避免额外的接口定义
+const translationCache = new Map<
+  string,
+  { data: string; timestamp: number }
+>();
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5分钟缓存时间
+
+/**
+ * 检查并使用缓存数据
+ */
+function checkAndUseCache(
+  word: string,
+  translationCache: Map<
+    string,
+    { data: string; timestamp: number }
+  >,
+  CACHE_EXPIRY: number,
+): { data: string; timestamp: number } | undefined {
+  const cachedEntry = translationCache.get(word);
+  if (
+    cachedEntry &&
+    Date.now() - cachedEntry.timestamp < CACHE_EXPIRY
+  ) {
+    return cachedEntry;
+  } else if (cachedEntry) {
+    // 缓存过期，删除它
+    translationCache.delete(word);
+  }
+  return undefined;
+}
 
 /**
  * @description 对于每个单词的翻译准备以及鼠标悬停时显示额外内容的组件
- * @param word 单词
- * @example <TransLine word={'hello'} />
+ * @param originalWord 原始格式的单词（保持原有大小写）
+ * @param lowerCaseWord 小写格式的单词（用于查询）
+ * @example <TransLine originalWord={'Hello'} lowerCaseWord={'hello'} />
  */
 export default function TransLine({
-  word,
+  originalWord,
+  lowerCaseWord,
 }: {
-  word: string;
+  originalWord: string;
+  lowerCaseWord: string;
 }) {
   return (
-    <p className='inline m-0 p-0 border-0 bg-transparent text-inherit font-inherit' style={{
-      display: 'inline',
-      margin: 0,
-      padding: 0,
-      border: 'none',
-      background: 'transparent',
-      color: 'inherit',
-      font: 'inherit',
-    }}>
-      <T2 word={word} />
+    <p
+      className='inline m-0 p-0 border-0 bg-transparent text-inherit font-inherit'
+      style={{
+        display: 'inline',
+        margin: 0,
+        padding: 0,
+        border: 'none',
+        background: 'transparent',
+        color: 'inherit',
+        font: 'inherit',
+        position: 'relative',
+      }}
+    >
+      <T2
+        originalWord={originalWord}
+        lowerCaseWord={lowerCaseWord}
+      />
     </p>
   );
 }
@@ -39,12 +87,18 @@ export default function TransLine({
 /*
  * @description 组合悬停前和后两个组件,逻辑是鼠标悬停时显示额外内容,
  * 当鼠标离开的时候悬停组件卸载,这样性能更好
- * @param word 单词
- * @example <T2 word={'hello'} />
+ * @param originalWord 原始格式的单词（保持原有大小写）
+ * @param lowerCaseWord 小写格式的单词（用于查询）
+ * @example <T2 originalWord={'Hello'} lowerCaseWord={'hello'} />
  *
  */
-
-function T2({ word }: { word: string }) {
+function T2({
+  originalWord,
+  lowerCaseWord,
+}: {
+  originalWord: string;
+  lowerCaseWord: string;
+}) {
   const [isHovered, setIsHovered] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{
     x: number;
@@ -52,30 +106,75 @@ function T2({ word }: { word: string }) {
   }>({ x: 0, y: 0 });
   const [hasTriggered, setHasTriggered] = useState(false); // 新增的状态，用于跟踪是否已经触发过 mouseenter 事件
   const timeoutId = useRef<number | null>(null); // 用于存储 setTimeout 的 ID
+  const hoverTimeoutId = useRef<number | null>(null); // 用于存储悬停显示的 setTimeout ID
 
-  function handleMouseEnter(
-    event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  ): void {
-    if (!hasTriggered) {
-      setTooltipPosition({
-        x: event.pageX,
-        y: event.pageY,
-      });
-      setIsHovered(true);
-      setHasTriggered(true); // 设置为已触发状态
-    }
-    if (timeoutId.current) {
-      clearTimeout(timeoutId.current);
-    }
-  }
+  const handleMouseEnter = useCallback(
+    (
+      event: React.MouseEvent<
+        HTMLButtonElement,
+        MouseEvent
+      >,
+    ): void => {
+      if (!hasTriggered) {
+        setTooltipPosition({
+          x: event.pageX,
+          y: event.pageY,
+        });
 
-  const handleMouseLeave = () => {
+        // 添加延迟显示，避免快速移动鼠标时的闪烁
+        hoverTimeoutId.current = window.setTimeout(() => {
+          setIsHovered(true);
+          setHasTriggered(true);
+        }, 300);
+      }
+
+      if (timeoutId.current) {
+        clearTimeout(timeoutId.current);
+      }
+    },
+    [hasTriggered],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    // 清除悬停显示的定时器
+    if (hoverTimeoutId.current) {
+      clearTimeout(hoverTimeoutId.current);
+    }
+
     // 延迟卸载,避免闪烁
     timeoutId.current = window.setTimeout(() => {
       setIsHovered(false);
       setHasTriggered(false); // 重置触发状态，以便下次可以重新触发
-    }, 500);
-  };
+    }, 300);
+  }, []);
+
+  // 使用useMemo优化组件渲染
+  const tooltipComponent = useMemo(() => {
+    return isHovered ? (
+      <HoverTooltip
+        word={lowerCaseWord}
+        x={tooltipPosition.x}
+        y={tooltipPosition.y}
+      />
+    ) : null;
+  }, [
+    isHovered,
+    lowerCaseWord,
+    tooltipPosition.x,
+    tooltipPosition.y,
+  ]);
+
+  useEffect(() => {
+    // 清理定时器
+    return () => {
+      if (timeoutId.current) {
+        clearTimeout(timeoutId.current);
+      }
+      if (hoverTimeoutId.current) {
+        clearTimeout(hoverTimeoutId.current);
+      }
+    };
+  }, []);
 
   return (
     <button
@@ -94,8 +193,15 @@ function T2({ word }: { word: string }) {
       }}
       type='button'
     >
-      <span className='font-mono relative' style={{ display: 'inline-block' }}>
-        {word}
+      <span
+        className='relative'
+        style={{
+          display: 'inline-block',
+          color: 'inherit',
+          font: 'inherit',
+        }}
+      >
+        {originalWord}
         <span
           style={{
             position: 'absolute',
@@ -109,13 +215,7 @@ function T2({ word }: { word: string }) {
           }}
         />
       </span>
-      {isHovered && (
-        <HoverTooltip
-          word={word}
-          x={tooltipPosition.x}
-          y={tooltipPosition.y}
-        />
-      )}
+      {tooltipComponent}
     </button>
   );
 }
@@ -136,42 +236,12 @@ function HoverTooltip({
   y: number;
 }) {
   const word3 = word;
-  const [wordLocalInfoOuter, setWordLocalInfoOuter] = useState<IWordStorage>();
+  const [wordLocalInfoOuter, setWordLocalInfoOuter] =
+    useState<IWordStorage>();
   const [dataEnd, setDataEnd] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    async function fetchData() {
-      const wordLocalInfo = await queryWord(word3);
-      if (!wordLocalInfo) return;
-
-      const word = { word: word3 };
-      try {
-        const htmlString = await sendMessage('trans', word);
-        const element = parseBingDict(htmlString);
-        if (element) {
-          setDataEnd(element);
-        } else {
-          await deleteWord(word3);
-          await processPageWords();
-          return;
-        }
-      } catch (error) {
-        console.error('获取翻译失败:', error);
-        setDataEnd('获取翻译失败');
-      }
-
-      if (wordLocalInfo) {
-        wordLocalInfo.queryTimes += 1;
-        setWordLocalInfoOuter(wordLocalInfo);
-        await addWordLocal(wordLocalInfo);
-      }
-    }
-    fetchData().catch(console.error);
-
-    return () => {};
-  }, [word3]);
-
-  async function handleDeleteWord() {
+  const handleDeleteWord = useCallback(async () => {
     if (wordLocalInfoOuter) {
       await deleteWord(wordLocalInfoOuter.word);
       setWordLocalInfoOuter({
@@ -181,9 +251,9 @@ function HoverTooltip({
       });
       await processPageWords();
     }
-  }
-  
-  async function handleAddQuery() {
+  }, [wordLocalInfoOuter]);
+
+  const handleAddQuery = useCallback(async () => {
     if (wordLocalInfoOuter) {
       await addQueriedWord(wordLocalInfoOuter.word);
       setWordLocalInfoOuter({
@@ -191,7 +261,47 @@ function HoverTooltip({
         queryTimes: wordLocalInfoOuter.queryTimes + 1,
       });
     }
-  }
+  }, [wordLocalInfoOuter]);
+
+  useEffect(() => {
+    fetchData(
+      word3,
+      setDataEnd,
+      setLoading,
+      setWordLocalInfoOuter,
+      addWordLocal,
+      deleteWord,
+      processPageWords,
+      translationCache,
+      CACHE_EXPIRY,
+    ).catch(console.error);
+
+    return () => {};
+  }, [word3]);
+
+  // 面板内容组件
+  const panelContent = useMemo(() => {
+    if (loading) {
+      return <LoadingPanel />;
+    }
+
+    return (
+      <LoadedPanel
+        word={word}
+        dataEnd={dataEnd}
+        wordLocalInfoOuter={wordLocalInfoOuter}
+        handleAddQuery={handleAddQuery}
+        handleDeleteWord={handleDeleteWord}
+      />
+    );
+  }, [
+    loading,
+    word,
+    dataEnd,
+    wordLocalInfoOuter,
+    handleAddQuery,
+    handleDeleteWord,
+  ]);
 
   return (
     <div
@@ -215,7 +325,214 @@ function HoverTooltip({
         zIndex: 9999,
       }}
     >
-      {/* 这里是悬停时显示的额外内容 */}
+      {panelContent}
+      <button
+        type='button'
+        className={
+          'absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-red-500 font-bold transition-all hover:bg-red-100'
+        }
+        onClick={handleDeleteWord}
+        title='删除单词'
+        style={{
+          background: 'transparent',
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '18px',
+          lineHeight: '1',
+          fontWeight: 'bold',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '0',
+          margin: '0',
+        }}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
+/**
+ * 获取单词信息并处理缓存检查
+ */
+async function fetchData(
+  word: string,
+  setDataEnd: (data: string) => void,
+  setLoading: (loading: boolean) => void,
+  setWordLocalInfoOuter: (info: any) => void,
+  addWordLocal: (info: any) => Promise<void>,
+  deleteWord: (word: string) => Promise<void>,
+  processPageWords: () => Promise<void>,
+  translationCache: Map<
+    string,
+    { data: string; timestamp: number }
+  >,
+  CACHE_EXPIRY: number,
+) {
+  const wordLocalInfo = await queryWord(word);
+  if (!wordLocalInfo) return;
+
+  // 先检查缓存
+  const cachedResult = await handleCachedData(
+    word,
+    wordLocalInfo,
+    translationCache,
+    CACHE_EXPIRY,
+    setDataEnd,
+    setLoading,
+    setWordLocalInfoOuter,
+    addWordLocal,
+  );
+
+  if (cachedResult) return;
+
+  // 缓存未命中或过期，从网络获取数据
+  await fetchAndProcessNetworkData(
+    word,
+    setDataEnd,
+    setLoading,
+    wordLocalInfo,
+    setWordLocalInfoOuter,
+    addWordLocal,
+    deleteWord,
+    processPageWords,
+    translationCache,
+  );
+}
+
+/**
+ * 处理缓存数据
+ */
+async function handleCachedData(
+  word: string,
+  wordLocalInfo: any,
+  translationCache: Map<
+    string,
+    { data: string; timestamp: number }
+  >,
+  CACHE_EXPIRY: number,
+  setDataEnd: (data: string) => void,
+  setLoading: (loading: boolean) => void,
+  setWordLocalInfoOuter: (info: any) => void,
+  addWordLocal: (info: any) => Promise<void>,
+): Promise<boolean> {
+  const cachedEntry = checkAndUseCache(
+    word,
+    translationCache,
+    CACHE_EXPIRY,
+  );
+  if (cachedEntry) {
+    setDataEnd(cachedEntry.data);
+    setLoading(false);
+
+    // 更新查询次数
+    if (wordLocalInfo) {
+      wordLocalInfo.queryTimes += 1;
+      setWordLocalInfoOuter(wordLocalInfo);
+      await addWordLocal(wordLocalInfo);
+    }
+    return true;
+  }
+  return false;
+}
+
+/**
+ * 从网络获取并处理数据
+ */
+async function fetchAndProcessNetworkData(
+  word: string,
+  setDataEnd: (data: string) => void,
+  setLoading: (loading: boolean) => void,
+  wordLocalInfo: any,
+  setWordLocalInfoOuter: (info: any) => void,
+  addWordLocal: (info: any) => Promise<void>,
+  deleteWord: (word: string) => Promise<void>,
+  processPageWords: () => Promise<void>,
+  translationCache: Map<
+    string,
+    { data: string; timestamp: number }
+  >,
+) {
+  try {
+    const htmlString = await sendMessage('trans', { word });
+    const element = parseBingDict(htmlString);
+    if (element) {
+      // 缓存结果
+      const cacheEntry = {
+        data: element,
+        timestamp: Date.now(),
+      };
+      translationCache.set(word, cacheEntry);
+      setDataEnd(element);
+    } else {
+      await deleteWord(word);
+      await processPageWords();
+      setDataEnd('未找到翻译');
+    }
+  } catch (error) {
+    console.error('获取翻译失败:', error);
+    setDataEnd('获取翻译失败');
+  } finally {
+    setLoading(false);
+  }
+
+  if (wordLocalInfo) {
+    wordLocalInfo.queryTimes += 1;
+    setWordLocalInfoOuter(wordLocalInfo);
+    await addWordLocal(wordLocalInfo);
+  }
+}
+
+/**
+ * 解析html字符串
+ */
+function parseBingDict(htmlString: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(
+    htmlString,
+    'text/html',
+  );
+
+  const element = doc
+    .querySelector('#clientnewword')
+    ?.getAttribute('data-definition');
+
+  if (!element) {
+    return '没找到';
+  }
+
+  // 使用通用正则表达式匹配词性格式（字母加点的模式）
+  // 在每个词性前添加换行（除了第一个）
+  return element.replace(
+    /(\s)([a-zA-Z]+\.)(?=\s)/g,
+    '$1\n$2',
+  );
+}
+
+// 加载中面板组件
+function LoadingPanel() {
+  return (
+    <div style={{ textAlign: 'center', padding: '20px' }}>
+      加载中...
+    </div>
+  );
+}
+
+// 已加载面板组件
+function LoadedPanel({
+  word,
+  dataEnd,
+  wordLocalInfoOuter,
+  handleAddQuery,
+  handleDeleteWord,
+}: {
+  word: string;
+  dataEnd: string;
+  wordLocalInfoOuter?: IWordStorage;
+  handleAddQuery: () => void;
+  handleDeleteWord: () => void;
+}) {
+  return (
+    <>
       <h1
         className={'text-center text-xl font-bold mb-3'}
         style={{
@@ -248,7 +565,7 @@ function HoverTooltip({
           </span>
         </span>
       </span>
-      <div className="flex justify-between mt-2">
+      <div className='flex justify-between mt-2'>
         <button
           type='button'
           className={
@@ -270,56 +587,6 @@ function HoverTooltip({
           删除单词
         </button>
       </div>
-      <button
-        type='button'
-        className={
-          'absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-red-500 font-bold transition-all hover:bg-red-100'
-        }
-        onClick={handleDeleteWord}
-        title='删除单词'
-        style={{
-          background: 'transparent',
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '18px',
-          lineHeight: '1',
-          fontWeight: 'bold',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '0',
-          margin: '0',
-        }}
-      >
-        ×
-      </button>
-    </div>
+    </>
   );
 }
-
-/**
- * 解析html字符串
- */
-function parseBingDict(htmlString: string) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(
-    htmlString,
-    'text/html',
-  );
-
-  const element = doc
-    .querySelector('#clientnewword')
-    ?.getAttribute('data-definition');
-
-  if (!element) {
-    return '没找到';
-  }
-
-  // 使用通用正则表达式匹配词性格式（字母加点的模式）
-  // 在每个词性前添加换行（除了第一个）
-  return element.replace(
-    /(\s)([a-zA-Z]+\.)(?=\s)/g,
-    '$1\n$2',
-  );
-}
-
-
-

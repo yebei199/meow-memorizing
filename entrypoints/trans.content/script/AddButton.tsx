@@ -32,7 +32,7 @@ export async function setupSelectionListener(): Promise<void> {
     range.insertNode(mySpan)
 
     // 添加单词到本地存储并更新查询次数
-    await addQueriedWord(selectedText)
+    await addQueriedWord(selectedText.toLowerCase())
     selection.removeAllRanges()
     await processPageWords()
   })
