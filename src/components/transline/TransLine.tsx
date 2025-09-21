@@ -1,4 +1,3 @@
-import { queryWord } from '@/src/core/storageManager';
 import T2 from './T2';
 
 /**
