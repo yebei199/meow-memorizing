@@ -1,183 +1,149 @@
-import ReactDOM from 'react-dom/client';
-import { getWordsList } from '@/entrypoints/trans.content/script/storageAction.ts';
-import type { IAllWordsStorage } from '@/src/wxtStore.ts';
-import TransLine from './TransLine.tsx';
+import type React from 'react'
+import { createRoot } from 'react-dom/client'
+import TransLine from '@/entrypoints/trans.content/script/TransLine'
+import { getWordsList } from '@/src/core/storageManager'
 
 /**
-  遍历DOM树，替换目标单词
- @example await ergodicWords()
- @returns void
-*/
-export default async function ergodicWords() {
-  //筛选
-  const wordsList: IAllWordsStorage = await getWordsList();
-  console.log(wordsList);
-  const wordsListStr = Object.keys(wordsList);
-  if (wordsListStr.length === 0) return;
+ * 处理页面中的单词
+ */
+export async function processPageWords(): Promise<void> {
+  try {
+    // 获取单词列表
+    const wordsList = await getWordsList()
+    if (!wordsList) return
 
-  const delWords: IAllWordsStorage = {};
-  for (const i in wordsList) {
-    if (wordsList[i].isDeleted) {
-      delWords[i] = wordsList[i];
-    }
-  }
-  const delWordsListStr = Object.keys(delWords);
+    // 获取页面所有文本节点
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      null,
+    )
 
-  const R1 = new ReplaceMain(wordsListStr);
-  R1.walk();
+    const textNodes: Text[] = []
+    let node: Node | null
 
-  for (const i of wordsListStr) {
-    const list1 = document.getElementsByClassName(
-      R1.classNamePrefix + i,
-    );
-    for (const i2 of list1) {
-      const id = `${i2.toString()}1`;
-      const root = ReactDOM.createRoot(i2);
-
-      if (delWordsListStr.includes(i)) {
-        root.render(<span> {i} </span>);
-      } else {
-        root.render(<TransLine word={i} key={id} />);
+    // 收集所有文本节点
+    node = walker.nextNode()
+    while (node) {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent) {
+        textNodes.push(node as Text)
       }
+      node = walker.nextNode()
     }
+
+    // 处理每个文本节点
+    for (const textNode of textNodes) {
+      await processTextNode(textNode, wordsList)
+    }
+  } catch (error) {
+    console.error('处理页面单词时出错:', error)
   }
 }
 
-/*
- * @description 替换的操作类
- * 1. 遍历DOM树，找到目标单词
- * 2. 替换目标单词
- * 3. 添加className，防止重复
- * @param targetWordList 目标单词列表
- * @example new ReplaceMain(['hello', 'world']).walk()
+/**
+ * 处理单个文本节点
  */
-class ReplaceMain {
-  public readonly classNamePrefix: string = 'w%3@D';
+async function processTextNode(
+  textNode: Text,
+  wordsList: Record<string, any>,
+): Promise<void> {
+  const text = textNode.textContent || ''
+  if (!text.trim()) return
 
-  //已经去重了的目标单词列表
-  public targetWordList: string[];
-  public targetWordSet: Set<string>;
-
-  public startNode: HTMLElement = document.body;
-  public excludeTags: string[] = [
-    'script',
-    'CODE',
-    'BUTTON',
-    'A',
-    'a',
-  ];
-
-  constructor(targetWordList: string[]) {
-    this.targetWordSet = new Set(targetWordList);
-    this.targetWordList = Array.from(this.targetWordSet);
+  // 检查父元素是否已经处理过
+  const parent = textNode.parentNode
+  if (!parent) return
+  
+  // 检查是否已经有处理过的标记
+  if (parent instanceof Element && parent.querySelector('p[data-word]')) {
+    return // 已经处理过，跳过
   }
 
-  public walk(node: Node = this.startNode) {
-    const stack: Node[] = [node];
-    while (stack.length > 0) {
-      const current = stack.pop();
-      if (!current) continue;
+  const words = Object.keys(wordsList)
+    .filter((wordKey) => !wordsList[wordKey].isDeleted)
+    .map((wordKey) => wordsList[wordKey].word)
+    .sort((a, b) => b.length - a.length) // 按长度排序，优先匹配长单词
 
-      try {
-        switch (current.nodeType) {
-          case 1: // Element
-          case 9: // Document
-          case 11: {
-            // Document fragment
-            let child = current.firstChild; // 改为从第一个子节点开始
-            while (child) {
-              if (
-                !this.excludeTags.includes(
-                  (child as Element).tagName,
-                )
-              ) {
-                stack.push(child);
-              }
-
-              child = child.nextSibling; // 移动到下一个兄弟节点
-            }
-            break;
-          }
-          case 3: // Text node
-            this.handleText(current as Text);
-            break;
-          default:
-            break;
+  // 查找所有匹配的单词
+  const matches: { index: number; word: string; end: number }[] = []
+  
+  // 使用一个更精确的匹配算法，避免重叠匹配
+  let lastIndex = 0
+  const textLower = text.toLowerCase()
+  
+  outer: while (lastIndex < text.length) {
+    for (const word of words) {
+      const wordLower = word.toLowerCase()
+      const index = textLower.indexOf(wordLower, lastIndex)
+      
+      if (index >= 0) {
+        // 检查是否是单词边界
+        const beforeChar = index > 0 ? text[index - 1] : ' '
+        const afterChar = index + word.length < text.length ? text[index + word.length] : ' '
+        const isWordBoundary = /^[^a-zA-Z]$/.test(beforeChar) && /^[^a-zA-Z]$/.test(afterChar)
+        
+        if (isWordBoundary) {
+          matches.push({
+            index: index,
+            word: text.substring(index, index + word.length), // 保持原始大小写
+            end: index + word.length
+          })
+          lastIndex = index + word.length
+          continue outer
+        } else {
+          lastIndex = index + 1
         }
-      } catch (error) {
-        console.error(`Error walking the DOM: ${error}`);
-        // 根据需求决定是否要继续遍历或停止
       }
     }
+    lastIndex++
   }
-
-  private handleText(textNode: Text) {
-    if (!textNode) {
-      console.error('TextNode is null');
-      return;
+  
+  // 如果没有匹配的单词，直接返回
+  if (matches.length === 0) return
+  
+  // 按索引排序匹配项
+  matches.sort((a, b) => a.index - b.index)
+  
+  // 创建文档片段来保持原有结构
+  const fragment = document.createDocumentFragment()
+  let lastProcessedIndex = 0
+  
+  // 处理匹配的单词
+  for (const match of matches) {
+    // 添加匹配单词之前的文本
+    if (match.index > lastProcessedIndex) {
+      const textBefore = text.substring(lastProcessedIndex, match.index)
+      fragment.appendChild(document.createTextNode(textBefore))
     }
-
-    const text = textNode.nodeValue;
-    if (!text || text.trim().length === 0) {
-      return;
-    }
-
-    const parent = textNode.parentNode as HTMLElement;
-
-    if (parent?.classList.contains(this.classNamePrefix)) {
-      return;
-    }
-
-    const wordsList = text.split(' ');
-    const uniqueWords = new Set(wordsList);
-    const intersect1 =
-      this.targetWordSet.intersection(uniqueWords);
-
-    if (intersect1.size === 0) {
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    let currentText = '';
-
-    for (const originWord of wordsList) {
-      if (intersect1.has(originWord)) {
-        if (currentText !== '') {
-          fragment.appendChild(
-            document.createTextNode(currentText),
-          );
-          currentText = '';
-        }
-        const span = this.createReplacementSpan(originWord);
-        fragment.appendChild(span);
-        fragment.appendChild(document.createTextNode(' '));
-      } else {
-        currentText += ` ${originWord} `;
-      }
-    }
-
-    if (currentText !== '') {
-      fragment.appendChild(
-        document.createTextNode(currentText.trim()),
-      );
-    }
-
-    try {
-      parent?.replaceChild(fragment, textNode);
-    } catch (error) {
-      console.error('Error replacing child nodes:', error);
-    }
+    
+    // 直接使用 p 标签包裹单词，避免嵌套
+    const wordElement = document.createElement('p')
+    wordElement.setAttribute('data-word', match.word.toLowerCase())
+    wordElement.textContent = match.word
+    wordElement.style.display = 'inline'
+    wordElement.style.verticalAlign = 'baseline'
+    wordElement.style.margin = '0'
+    wordElement.style.padding = '0'
+    wordElement.style.border = 'none'
+    wordElement.style.background = 'none'
+    wordElement.style.color = 'inherit'
+    wordElement.style.font = 'inherit'
+    
+    fragment.appendChild(wordElement)
+    
+    // 为单词创建React组件
+    const root = createRoot(wordElement)
+    root.render(<TransLine word={match.word.toLowerCase()} />)
+    
+    lastProcessedIndex = match.end
   }
-
-  public createReplacementSpan(
-    targetWord: string,
-  ): HTMLSpanElement {
-    const replacementSpan = document.createElement('span');
-    replacementSpan.classList.add(this.classNamePrefix);
-    replacementSpan.classList.add(
-      this.classNamePrefix + targetWord,
-    );
-    replacementSpan.style.display = 'inline-block';
-    return replacementSpan;
+  
+  // 添加最后剩余的文本
+  if (lastProcessedIndex < text.length) {
+    const textAfter = text.substring(lastProcessedIndex)
+    fragment.appendChild(document.createTextNode(textAfter))
   }
+  
+  // 替换原文本节点
+  parent.replaceChild(fragment, textNode)
 }

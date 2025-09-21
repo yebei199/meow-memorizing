@@ -40,3 +40,9 @@ export const extensionStorage =
     browser.storage.sync,
   )
 
+// 从新核心模块重新导出所有内容
+export * from './core/storageManager'
+export type { IWordQuery } from './core/types'
+export { sendMessage, onMessage } from './core/messaging'
+
+

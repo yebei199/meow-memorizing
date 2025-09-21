@@ -1,4 +1,4 @@
-import { onMessage } from '@/src/wxtMessaging.ts'
+import { onMessage } from '@/src/core/messaging'
 import axios from 'axios'
 
 export default defineBackground({

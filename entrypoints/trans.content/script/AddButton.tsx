@@ -1,78 +1,39 @@
-import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords.tsx';
-import type { IWordStorage } from '@/src/wxtStore.ts';
-import {
-  addWordLocal,
-  queryWord,
-} from './storageAction.ts';
+import { processPageWords } from '@/entrypoints/trans.content/script/ergodicWords'
+import { addQueriedWord, filterWord } from '@/src/core/wordProcessor'
 
 /**
- * listen to the mouseup event to select the text and add it to the local storage
+ * 监听鼠标抬起事件，选择文本并添加到本地存储
  */
-export async function selectListen() {
+export async function setupSelectionListener(): Promise<void> {
   document.addEventListener('mouseup', async () => {
     // 获取当前选中的文本
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount < 1) return;
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount < 1) return
 
-    const range = selection.getRangeAt(0);
-    const selectedText = range.toString().trim();
-    // if the selected text is not a valid word, return
-    console.log(
-      'first',
-      await filterWord(selectedText.toLowerCase()),
-    );
-    if (await filterWord(selectedText)) return;
+    const range = selection.getRangeAt(0)
+    const selectedText = range.toString().trim()
+    
+    // 如果选中的文本不是有效单词，返回
+    if (await filterWord(selectedText)) return
 
-    const mySpan: HTMLSpanElement =
-      document.createElement('span');
-    mySpan.textContent = selectedText;
-    // 使用deleteContents方法清空原范围的内容，并用<span>替换
-    range.deleteContents();
-    range.insertNode(mySpan);
+    const mySpan: HTMLSpanElement = document.createElement('p')
+    mySpan.textContent = selectedText
+    mySpan.style.display = 'inline'
+    mySpan.style.verticalAlign = 'baseline'
+    mySpan.style.margin = '0'
+    mySpan.style.padding = '0'
+    mySpan.style.border = 'none'
+    mySpan.style.background = 'none'
+    mySpan.style.color = 'inherit'
+    mySpan.style.font = 'inherit'
+    
+    // 使用deleteContents方法清空原范围的内容，并用<p>替换
+    range.deleteContents()
+    range.insertNode(mySpan)
 
-    // add the word to the local storage and update the queryTimes
-    await addQueriedWord(selectedText);
-    selection.removeAllRanges();
-    await ergodicWords();
-  });
-}
-
-/**
- * @returns if the word is valid return false, else return true
- */
-async function filterWord(word: string): Promise<boolean> {
-  // 检查单词长度是否大于2
-  if (word.length <= 2) return true;
-
-  // 使用正则表达式检查单词是否符合要求
-  const regex = /^\s*(\b[a-zA-Z-]+\b)\s*$/;
-  if (!regex.test(word)) return true;
-
-  const query1 = await queryWord(word);
-  // if it exists in the local storage and not deleted, return true
-  return query1 !== undefined && !query1.isDeleted;
-}
-
-/**
- * add the word of queried by the user to the local storage and update the queryTimes
- */
-async function addQueriedWord(word: string) {
-  const word1: IWordStorage | undefined =
-    await queryWord(word);
-
-  if (word1) {
-    // if the word is already in the local storage, but the delete staute is true, update the queryTimes
-    word1.queryTimes += 1;
-    word1.isDeleted = false;
-    word1.deleteTimes += 1;
-    await addWordLocal(word1);
-  } else {
-    const wordNew: IWordStorage = {
-      word: word,
-      queryTimes: 1,
-      isDeleted: false,
-      deleteTimes: 0,
-    };
-    await addWordLocal(wordNew);
-  }
+    // 添加单词到本地存储并更新查询次数
+    await addQueriedWord(selectedText)
+    selection.removeAllRanges()
+    await processPageWords()
+  })
 }

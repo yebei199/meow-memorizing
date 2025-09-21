@@ -1,18 +1,15 @@
-import classNames from 'classnames';
 import type React from 'react';
 import {
   type ReactElement,
   useEffect,
+  useRef,
   useState,
 } from 'react';
-import { createPortal } from 'react-dom';
-import ergodicWords from '@/entrypoints/trans.content/script/ergodicWords.tsx';
-import { sendMessage } from '@/src/wxtMessaging.ts';
-import type { IWordStorage } from '@/src/wxtStore.ts';
-import {
-  addWordLocal,
-  queryWord,
-} from './storageAction.ts';
+import { sendMessage } from '@/src/core/messaging';
+import { addWordLocal, queryWord } from '@/src/core/storageManager';
+import type { IWordStorage } from '@/src/core/types';
+import { deleteWord, addQueriedWord } from '@/src/core/wordProcessor';
+import { processPageWords } from '@/entrypoints/trans.content/script/ergodicWords';
 
 /**
  * @description 对于每个单词的翻译准备以及鼠标悬停时显示额外内容的组件
@@ -25,9 +22,17 @@ export default function TransLine({
   word: string;
 }) {
   return (
-    <div className={'inline'}>
+    <p className='inline m-0 p-0 border-0 bg-transparent text-inherit font-inherit' style={{
+      display: 'inline',
+      margin: 0,
+      padding: 0,
+      border: 'none',
+      background: 'transparent',
+      color: 'inherit',
+      font: 'inherit',
+    }}>
       <T2 word={word} />
-    </div>
+    </p>
   );
 }
 
@@ -84,10 +89,12 @@ function T2({ word }: { word: string }) {
         font: 'inherit',
         cursor: 'pointer',
         position: 'relative',
+        display: 'inline', // 确保表现为内联元素
+        verticalAlign: 'baseline', // 保持基线对齐
       }}
       type='button'
     >
-      <span className={classNames('font-mono', 'relative')}>
+      <span className='font-mono relative' style={{ display: 'inline-block' }}>
         {word}
         <span
           style={{
@@ -102,21 +109,15 @@ function T2({ word }: { word: string }) {
           }}
         />
       </span>
-      <TooltipPortal isVisible={isHovered}>
-        {
-          <HoverTooltip
-            word={word}
-            x={tooltipPosition?.x}
-            y={tooltipPosition?.y}
-          />
-        }
-      </TooltipPortal>
+      {isHovered && (
+        <HoverTooltip
+          word={word}
+          x={tooltipPosition.x}
+          y={tooltipPosition.y}
+        />
+      )}
     </button>
   );
-}
-
-export interface IWordQuery {
-  word: string;
 }
 
 /**
@@ -135,8 +136,7 @@ function HoverTooltip({
   y: number;
 }) {
   const word3 = word;
-  const [wordLocalInfoOuter, setWordLocalInfoOuter] =
-    useState<IWordStorage>();
+  const [wordLocalInfoOuter, setWordLocalInfoOuter] = useState<IWordStorage>();
   const [dataEnd, setDataEnd] = useState<string>('');
 
   useEffect(() => {
@@ -144,20 +144,20 @@ function HoverTooltip({
       const wordLocalInfo = await queryWord(word3);
       if (!wordLocalInfo) return;
 
-      const word: IWordQuery = { word: word3 };
-      const htmlString = await sendMessage('trans', word);
-      const element = parseBingDict(htmlString);
-      if (element) {
-        setDataEnd(element);
-      } else {
-        const updatedWordInfo = {
-          ...wordLocalInfo,
-          isDeleted: true,
-          deleteTimes: wordLocalInfo?.deleteTimes + 1,
-        };
-        await addWordLocal(updatedWordInfo); // 假设这个函数会更新服务器或本地存储
-        await ergodicWords();
-        return;
+      const word = { word: word3 };
+      try {
+        const htmlString = await sendMessage('trans', word);
+        const element = parseBingDict(htmlString);
+        if (element) {
+          setDataEnd(element);
+        } else {
+          await deleteWord(word3);
+          await processPageWords();
+          return;
+        }
+      } catch (error) {
+        console.error('获取翻译失败:', error);
+        setDataEnd('获取翻译失败');
       }
 
       if (wordLocalInfo) {
@@ -171,44 +171,53 @@ function HoverTooltip({
     return () => {};
   }, [word3]);
 
-  async function deleteWord() {
+  async function handleDeleteWord() {
     if (wordLocalInfoOuter) {
-      // 复制对象以避免直接修改状态
-      const updatedWordInfo = {
+      await deleteWord(wordLocalInfoOuter.word);
+      setWordLocalInfoOuter({
         ...wordLocalInfoOuter,
         isDeleted: true,
         deleteTimes: wordLocalInfoOuter.deleteTimes + 1,
-      };
-      await addWordLocal(updatedWordInfo); // 假设这个函数会更新服务器或本地存储
-      setWordLocalInfoOuter(updatedWordInfo); // 更新组件状态
-      await ergodicWords();
+      });
+      await processPageWords();
     }
   }
+  
+  async function handleAddQuery() {
+    if (wordLocalInfoOuter) {
+      await addQueriedWord(wordLocalInfoOuter.word);
+      setWordLocalInfoOuter({
+        ...wordLocalInfoOuter,
+        queryTimes: wordLocalInfoOuter.queryTimes + 1,
+      });
+    }
+  }
+
   return (
     <div
-      className={classNames(
-        'position-absolute overflow-auto z-99',
-        'w-90 h-auto',
-        'rounded-2xl p-6',
-      )}
+      className={
+        'position-absolute overflow-auto z-99 w-90 h-auto rounded-2xl p-6'
+      }
       style={{
+        position: 'fixed',
         left: `${x - 70}px`,
         top: `${y + 30}px`,
-        background: 'rgba(255, 255, 255, 0.01)', // 进一步提高透明度
+        background: 'rgba(255, 255, 255, 0.01)',
         backdropFilter: 'blur(30px)',
         WebkitBackdropFilter: 'blur(30px)',
         borderRadius: '18px',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
         border: '1px solid rgba(255, 255, 255, 0.7)',
         maxWidth: '400px',
-        fontFamily: 'Arial, sans-serif', // 固定字体族
-        fontSize: '14px', // 固定字体大小
-        lineHeight: '1.4', // 固定行高
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '14px',
+        lineHeight: '1.4',
+        zIndex: 9999,
       }}
     >
       {/* 这里是悬停时显示的额外内容 */}
       <h1
-        className='text-center text-xl font-bold mb-3'
+        className={'text-center text-xl font-bold mb-3'}
         style={{
           color: 'inherit',
           fontFamily: 'inherit',
@@ -220,8 +229,12 @@ function HoverTooltip({
 
       <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
       <p
-        className='break-words my-4'
-        style={{ color: 'inherit', fontFamily: 'inherit', whiteSpace: 'pre-line' }}
+        className={'break-words my-4'}
+        style={{
+          color: 'inherit',
+          fontFamily: 'inherit',
+          whiteSpace: 'pre-line',
+        }}
       >
         {dataEnd}
       </p>
@@ -234,31 +247,40 @@ function HoverTooltip({
             {wordLocalInfoOuter?.queryTimes}
           </span>
         </span>
-        {/* 删除按钮改为右上角红色"x" */}
       </span>
+      <div className="flex justify-between mt-2">
+        <button
+          type='button'
+          className={
+            'px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600'
+          }
+          onClick={handleAddQuery}
+          title='增加查询次数'
+        >
+          +1 查询
+        </button>
+        <button
+          type='button'
+          className={
+            'px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600'
+          }
+          onClick={handleDeleteWord}
+          title='删除单词'
+        >
+          删除单词
+        </button>
+      </div>
       <button
         type='button'
-        className={classNames(
-          'absolute',
-          'top-2',
-          'right-2',
-          'w-6',
-          'h-6',
-          'flex',
-          'items-center',
-          'justify-center',
-          'rounded-full',
-          'text-red-500',
-          'font-bold',
-          'transition-all',
-          'hover:bg-red-100',
-        )}
-        onClick={deleteWord}
+        className={
+          'absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-red-500 font-bold transition-all hover:bg-red-100'
+        }
+        onClick={handleDeleteWord}
         title='删除单词'
         style={{
           background: 'transparent',
-          fontFamily: 'Arial, sans-serif', // 固定字体族
-          fontSize: '18px', // 固定字体大小
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '18px',
           lineHeight: '1',
           fontWeight: 'bold',
           border: 'none',
@@ -293,25 +315,11 @@ function parseBingDict(htmlString: string) {
 
   // 使用通用正则表达式匹配词性格式（字母加点的模式）
   // 在每个词性前添加换行（除了第一个）
-  return element.replace(/(\s)([a-zA-Z]+\.)(?=\s)/g, '$1\n$2');
-}
-
-// 创建一个 Portal 组件
-export const TooltipPortal = ({
-  children,
-  isVisible,
-}: {
-  children: ReactElement;
-  isVisible: boolean;
-}) => {
-  if (!isVisible) return null;
-
-  return createPortal(
-    children,
-    document.body, // 或者任何其他的 DOM 元素
+  return element.replace(
+    /(\s)([a-zA-Z]+\.)(?=\s)/g,
+    '$1\n$2',
   );
-};
-
+}
 
 
 
