@@ -6,8 +6,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import HoverTooltip from './HoverTooltip';
 import { queryWord } from '@/src/core/storageManager';
+import HoverTooltip from './HoverTooltip';
 
 interface WordHighlighterProps {
   originalWord: string;
@@ -19,7 +19,7 @@ function WordHighlighter({
   lowerCaseWord,
 }: WordHighlighterProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState<{
+  const [, setTooltipPosition] = useState<{
     x: number;
     y: number;
   }>({ x: 0, y: 0 });
@@ -36,7 +36,7 @@ function WordHighlighter({
         setIsDeleted(true);
       }
     };
-    
+
     checkWordStatus();
   }, [lowerCaseWord]);
 
@@ -50,10 +50,16 @@ function WordHighlighter({
         setIsDeleted(true);
       }
     };
-    
-    window.addEventListener('deleteWord', handleDelete as EventListener);
+
+    window.addEventListener(
+      'deleteWord',
+      handleDelete as EventListener,
+    );
     return () => {
-      window.removeEventListener('deleteWord', handleDelete as EventListener);
+      window.removeEventListener(
+        'deleteWord',
+        handleDelete as EventListener,
+      );
     };
   }, [lowerCaseWord]);
 
@@ -66,7 +72,7 @@ function WordHighlighter({
     ): void => {
       // 如果单词已被删除，则不显示tooltip
       if (isDeleted) return;
-      
+
       if (!hasTriggered) {
         setTooltipPosition({
           x: event.pageX,
@@ -99,18 +105,9 @@ function WordHighlighter({
 
   const tooltipComponent = useMemo(() => {
     return isHovered ? (
-      <HoverTooltip
-        word={lowerCaseWord}
-        x={tooltipPosition.x}
-        y={tooltipPosition.y}
-      />
+      <HoverTooltip word={lowerCaseWord} />
     ) : null;
-  }, [
-    isHovered,
-    lowerCaseWord,
-    tooltipPosition.x,
-    tooltipPosition.y,
-  ]);
+  }, [isHovered, lowerCaseWord]);
 
   useEffect(() => {
     return () => {

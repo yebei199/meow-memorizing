@@ -6,7 +6,10 @@ import {
   useState,
 } from 'react';
 import { processPageWords } from '@/src/content-scripts/textProcessor';
-import { addWordLocal, queryWord } from '@/src/core/storageManager';
+import {
+  addWordLocal,
+  queryWord,
+} from '@/src/core/storageManager';
 import type { IWordStorage } from '@/src/core/types';
 import {
   addQueriedWord,
@@ -50,9 +53,11 @@ export default function HoverTooltip({
   const handleDeleteWord = useCallback(async () => {
     if (wordLocalInfoOuter) {
       // 先隐藏面板，然后再删除单词
-      const event = new CustomEvent('deleteWord', { detail: wordLocalInfoOuter.word });
+      const event = new CustomEvent('deleteWord', {
+        detail: wordLocalInfoOuter.word,
+      });
       window.dispatchEvent(event);
-      
+
       // 延迟一小段时间确保面板被卸载后再删除单词
       setTimeout(async () => {
         await deleteWord(wordLocalInfoOuter.word);
@@ -65,7 +70,9 @@ export default function HoverTooltip({
   const handleAddQuery = useCallback(async () => {
     if (wordLocalInfoOuter) {
       await addQueriedWord(wordLocalInfoOuter.word);
-      const updatedWordInfo = await queryWord(wordLocalInfoOuter.word);
+      const updatedWordInfo = await queryWord(
+        wordLocalInfoOuter.word,
+      );
       if (updatedWordInfo) {
         setWordLocalInfoOuter(updatedWordInfo);
       }
@@ -119,10 +126,16 @@ export default function HoverTooltip({
         // 隐藏面板的逻辑可以在这里添加
       }
     };
-    
-    window.addEventListener('deleteWord', handleDelete as EventListener);
+
+    window.addEventListener(
+      'deleteWord',
+      handleDelete as EventListener,
+    );
     return () => {
-      window.removeEventListener('deleteWord', handleDelete as EventListener);
+      window.removeEventListener(
+        'deleteWord',
+        handleDelete as EventListener,
+      );
     };
   }, [word]);
 

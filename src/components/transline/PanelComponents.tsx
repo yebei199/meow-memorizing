@@ -93,21 +93,6 @@ export function LoadedPanel({
             {wordLocalInfoOuter?.queryTimes}
           </span>
         </span>
-        <button
-          type='button'
-          onClick={handleAddQuery}
-          style={{
-            background: 'transparent',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            padding: '2px 6px',
-            cursor: 'pointer',
-            color: 'inherit',
-            fontSize: '12px',
-          }}
-        >
-          +1
-        </button>
       </span>
     </div>
   );
