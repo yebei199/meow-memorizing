@@ -5,6 +5,62 @@ import TransLine from '@/src/components/transline/TransLine.tsx';
 const originalTextMap = new WeakMap<Text, string>();
 
 /**
+ * 获取页面所有文本节点，排除翻译面板中的文本节点
+ */
+export function getAllTextNodes(): Text[] {
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: function(node) {
+        // 检查父元素是否属于翻译面板
+        let parent = node.parentElement;
+        while (parent) {
+          // 检查是否是翻译面板相关的元素
+          if (
+            parent.hasAttribute('data-word') ||
+            (parent instanceof HTMLElement && (
+              // 检查是否有面板相关的样式特征
+              parent.style.position === 'absolute' && 
+              parent.style.zIndex && 
+              parseInt(parent.style.zIndex) > 1000
+            )) ||
+            // 检查是否是React组件根节点
+            parent.hasAttribute('data-reactroot')
+          ) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          parent = parent.parentElement;
+        }
+        
+        // 检查文本节点本身是否有效
+        if (
+          node.nodeType === Node.TEXT_NODE &&
+          node.textContent &&
+          node.textContent.trim().length > 0
+        ) {
+          return NodeFilter.FILTER_ACCEPT;
+        }
+        
+        return NodeFilter.FILTER_REJECT;
+      }
+    },
+  );
+
+  const textNodes: Text[] = [];
+  let node: Node | null;
+
+  // 收集所有文本节点
+  node = walker.nextNode();
+  while (node) {
+    textNodes.push(node as Text);
+    node = walker.nextNode();
+  }
+
+  return textNodes;
+}
+
+/**
  * 处理单个文本节点，将匹配的单词用React组件包装
  */
 export async function processTextNode(
@@ -129,32 +185,4 @@ export function restoreOriginalTextNode(
     // 替换节点
     parent.replaceChild(textNode, wordElement);
   }
-}
-
-/**
- * 获取页面所有文本节点
- */
-export function getAllTextNodes(): Text[] {
-  const walker = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_TEXT,
-    null,
-  );
-
-  const textNodes: Text[] = [];
-  let node: Node | null;
-
-  // 收集所有文本节点
-  node = walker.nextNode();
-  while (node) {
-    if (
-      node.nodeType === Node.TEXT_NODE &&
-      node.textContent
-    ) {
-      textNodes.push(node as Text);
-    }
-    node = walker.nextNode();
-  }
-
-  return textNodes;
 }
