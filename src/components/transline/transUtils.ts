@@ -39,7 +39,7 @@ export function parseBingDict(htmlString: string) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(
     htmlString,
-    'text/html',
+    'text/html'
   );
 
   const element = doc
@@ -68,7 +68,6 @@ export async function fetchData(
   setWordLocalInfoOuter: (info: any) => void,
   addWordLocal: (info: any) => Promise<void>,
   deleteWord: (word: string) => Promise<void>,
-  processPageWords: () => Promise<void>,
   translationCache: Map<
     string,
     { data: string; timestamp: number }
@@ -110,7 +109,6 @@ export async function fetchData(
     setWordLocalInfoOuter,
     addWordLocal,
     deleteWord,
-    processPageWords,
     translationCache,
   );
 }
@@ -162,7 +160,6 @@ async function fetchAndProcessNetworkData(
   setWordLocalInfoOuter: (info: any) => void,
   addWordLocal: (info: any) => Promise<void>,
   deleteWord: (word: string) => Promise<void>,
-  processPageWords: () => Promise<void>,
   translationCache: Map<
     string,
     { data: string; timestamp: number }
@@ -181,7 +178,6 @@ async function fetchAndProcessNetworkData(
       setDataEnd(element);
     } else {
       await deleteWord(word);
-      await processPageWords();
       setDataEnd('未找到翻译');
     }
   } catch (error) {

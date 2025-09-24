@@ -22,6 +22,7 @@ import {
   fetchData,
   translationCache,
 } from './transUtils';
+import { processPageWords } from '@/src/content-scripts/ergodicWords';
 
 interface HoverTooltipProps {
   word: string;
@@ -58,7 +59,6 @@ const fetchWordData = (
     setWordLocalInfoOuter,
     addWordLocal,
     deleteWord,
-    () => Promise.resolve(), // 不再需要处理页面单词
     translationCache,
     CACHE_EXPIRY,
   ).catch(console.error);
@@ -78,8 +78,8 @@ const useWordDelete = (
       // 延迟一小段时间确保面板被卸载后再删除单词
       setTimeout(async () => {
         await deleteWord(wordLocalInfoOuter.word);
-        // deleteWord函数内部已经调用了restoreOriginalTextNode来恢复单词为原始状态
-        // 不需要再调用processPageWords
+        // 重新处理页面中的所有单词
+        await processPageWords();
       }, 10);
     }
   }, [wordLocalInfoOuter]);
@@ -100,6 +100,8 @@ const useWordQuery = (
       if (updatedWordInfo) {
         setWordLocalInfoOuter(updatedWordInfo);
       }
+      // 重新处理页面中的所有单词
+      await processPageWords();
     }
   }, [wordLocalInfoOuter, setWordLocalInfoOuter]);
 };

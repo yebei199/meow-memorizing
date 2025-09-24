@@ -86,6 +86,7 @@ function useMouseEvents(
   setTooltipPosition: React.Dispatch<
     React.SetStateAction<{ x: number; y: number }>
   >,
+  isPanelHovered: React.MutableRefObject<boolean>,
 ) {
   const timeoutId = useRef<number | null>(null);
   const hoverTimeoutId = useRef<number | null>(null);
@@ -112,8 +113,10 @@ function useMouseEvents(
         }, 300);
       }
 
+      // 清除隐藏面板的定时器
       if (timeoutId.current) {
         clearTimeout(timeoutId.current);
+        timeoutId.current = null;
       }
     },
     [
@@ -128,13 +131,18 @@ function useMouseEvents(
   const handleMouseLeave = useCallback(() => {
     if (hoverTimeoutId.current) {
       clearTimeout(hoverTimeoutId.current);
+      hoverTimeoutId.current = null;
     }
 
+    // 设置延迟隐藏面板，但允许面板上的鼠标事件取消隐藏
     timeoutId.current = window.setTimeout(() => {
-      setIsHovered(false);
-      setHasTriggered(false);
+      // 只有当鼠标不在面板上时才隐藏
+      if (!isPanelHovered.current) {
+        setIsHovered(false);
+        setHasTriggered(false);
+      }
     }, 300);
-  }, [setIsHovered, setHasTriggered]);
+  }, [setIsHovered, setHasTriggered, isPanelHovered]);
 
   // 清理定时器
   useEffect(() => {
@@ -156,10 +164,14 @@ function useTopLevelTooltip(
   isHovered: boolean,
   lowerCaseWord: string,
   tooltipPosition: { x: number; y: number },
+  setIsHovered: React.Dispatch<React.SetStateAction<boolean>>,
+  setHasTriggered: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const tooltipRootRef = useRef<HTMLDivElement | null>(
     null,
   );
+  const isPanelHovered = useRef(false);
+  const hideTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (isHovered) {
@@ -177,9 +189,37 @@ function useTopLevelTooltip(
       tooltipRootRef.current =
         document.createElement('div');
       tooltipRootRef.current.style.position = 'absolute';
-      tooltipRootRef.current.style.left = `${tooltipPosition.x}px`;
+      // 将面板定位在鼠标的正下方（居中对齐）
+      tooltipRootRef.current.style.left = `${tooltipPosition.x - 150}px`; // 300px宽度的一半
       tooltipRootRef.current.style.top = `${tooltipPosition.y + 10}px`; // 鼠标下方10px
       tooltipRootRef.current.style.zIndex = '10000';
+      
+      // 添加鼠标事件监听器到面板
+      const handlePanelMouseEnter = () => {
+        isPanelHovered.current = true;
+        // 清除可能正在等待隐藏面板的定时器
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+          hideTimeoutRef.current = null;
+        }
+      };
+      
+      const handlePanelMouseLeave = () => {
+        isPanelHovered.current = false;
+        // 延迟隐藏面板，给用户一点时间将鼠标移回单词上
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+        }
+        hideTimeoutRef.current = window.setTimeout(() => {
+          if (!isPanelHovered.current) {
+            setIsHovered(false);
+            setHasTriggered(false);
+          }
+        }, 300);
+      };
+      
+      tooltipRootRef.current.addEventListener('mouseenter', handlePanelMouseEnter);
+      tooltipRootRef.current.addEventListener('mouseleave', handlePanelMouseLeave);
 
       tooltipContainer.appendChild(tooltipRootRef.current);
 
@@ -189,6 +229,16 @@ function useTopLevelTooltip(
     } else {
       // 卸载tooltip
       if (tooltipRootRef.current) {
+        // 清除隐藏定时器
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+          hideTimeoutRef.current = null;
+        }
+        
+        // 移除事件监听器
+        tooltipRootRef.current.removeEventListener('mouseenter', () => {});
+        tooltipRootRef.current.removeEventListener('mouseleave', () => {});
+        
         const root = createRoot(tooltipRootRef.current);
         root.unmount();
         tooltipRootRef.current.remove();
@@ -199,14 +249,23 @@ function useTopLevelTooltip(
     return () => {
       // 清理函数
       if (tooltipRootRef.current) {
+        // 清除隐藏定时器
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+        }
+        
+        // 移除事件监听器
+        tooltipRootRef.current.removeEventListener('mouseenter', () => {});
+        tooltipRootRef.current.removeEventListener('mouseleave', () => {});
+        
         const root = createRoot(tooltipRootRef.current);
         root.unmount();
         tooltipRootRef.current.remove();
       }
     };
-  }, [isHovered, lowerCaseWord, tooltipPosition]);
+  }, [isHovered, lowerCaseWord, tooltipPosition, setIsHovered, setHasTriggered]);
 
-  return tooltipRootRef;
+  return { tooltipRootRef, isPanelHovered };
 }
 
 function WordHighlighter({
@@ -229,6 +288,13 @@ function WordHighlighter({
     setIsHovered,
     setHasTriggered,
   );
+  const { tooltipRootRef, isPanelHovered } = useTopLevelTooltip(
+    isHovered,
+    lowerCaseWord,
+    tooltipPosition,
+    setIsHovered,
+    setHasTriggered
+  );
   const { handleMouseEnter, handleMouseLeave } =
     useMouseEvents(
       isDeleted,
@@ -236,12 +302,8 @@ function WordHighlighter({
       setIsHovered,
       setHasTriggered,
       setTooltipPosition,
+      isPanelHovered,
     );
-  const tooltipRootRef = useTopLevelTooltip(
-    isHovered,
-    lowerCaseWord,
-    tooltipPosition,
-  );
 
   // 如果单词已被删除，渲染原始文本而不是带下划线的单词
   if (isDeleted) {
