@@ -14,7 +14,6 @@ export function LoadedPanel({
   word,
   dataEnd,
   wordLocalInfoOuter,
-  handleAddQuery,
   handleDeleteWord,
 }: {
   word: string;

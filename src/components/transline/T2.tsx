@@ -2,10 +2,10 @@ import type React from 'react';
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
+import { createRoot } from 'react-dom/client';
 import { queryWord } from '@/src/core/storageManager';
 import HoverTooltip from './HoverTooltip';
 
@@ -14,25 +14,14 @@ interface WordHighlighterProps {
   lowerCaseWord: string;
 }
 
-function WordHighlighter({
-  originalWord,
-  lowerCaseWord,
-}: WordHighlighterProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [, setTooltipPosition] = useState<{
-    x: number;
-    y: number;
-  }>({ x: 0, y: 0 });
-  const [hasTriggered, setHasTriggered] = useState(false);
+// 拆分出的自定义Hook：处理单词状态检查
+function useWordStatus(lowerCaseWord: string) {
   const [isDeleted, setIsDeleted] = useState(false);
-  const timeoutId = useRef<number | null>(null);
-  const hoverTimeoutId = useRef<number | null>(null);
 
-  // 检查单词是否已被删除
   useEffect(() => {
     const checkWordStatus = async () => {
       const wordInfo = await queryWord(lowerCaseWord);
-      if (wordInfo && wordInfo.isDeleted) {
+      if (wordInfo?.isDeleted) {
         setIsDeleted(true);
       }
     };
@@ -40,7 +29,22 @@ function WordHighlighter({
     checkWordStatus();
   }, [lowerCaseWord]);
 
-  // 监听删除事件
+  return { isDeleted, setIsDeleted };
+}
+
+// 拆分出的自定义Hook：处理删除事件监听
+function useDeleteEventListener(
+  lowerCaseWord: string,
+  setIsDeleted: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+  setIsHovered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+  setHasTriggered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+) {
   useEffect(() => {
     const handleDelete = (event: CustomEvent) => {
       if (event.detail === lowerCaseWord) {
@@ -61,7 +65,30 @@ function WordHighlighter({
         handleDelete as EventListener,
       );
     };
-  }, [lowerCaseWord]);
+  }, [
+    lowerCaseWord,
+    setIsDeleted,
+    setIsHovered,
+    setHasTriggered,
+  ]);
+}
+
+// 拆分出的自定义Hook：处理鼠标事件
+function useMouseEvents(
+  isDeleted: boolean,
+  hasTriggered: boolean,
+  setIsHovered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+  setHasTriggered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+  setTooltipPosition: React.Dispatch<
+    React.SetStateAction<{ x: number; y: number }>
+  >,
+) {
+  const timeoutId = useRef<number | null>(null);
+  const hoverTimeoutId = useRef<number | null>(null);
 
   const handleMouseEnter = useCallback(
     (
@@ -75,8 +102,8 @@ function WordHighlighter({
 
       if (!hasTriggered) {
         setTooltipPosition({
-          x: event.pageX,
-          y: event.pageY,
+          x: event.clientX,
+          y: event.clientY,
         });
 
         hoverTimeoutId.current = window.setTimeout(() => {
@@ -89,7 +116,13 @@ function WordHighlighter({
         clearTimeout(timeoutId.current);
       }
     },
-    [hasTriggered, isDeleted],
+    [
+      hasTriggered,
+      isDeleted,
+      setIsHovered,
+      setHasTriggered,
+      setTooltipPosition,
+    ],
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -101,14 +134,9 @@ function WordHighlighter({
       setIsHovered(false);
       setHasTriggered(false);
     }, 300);
-  }, []);
+  }, [setIsHovered, setHasTriggered]);
 
-  const tooltipComponent = useMemo(() => {
-    return isHovered ? (
-      <HoverTooltip word={lowerCaseWord} />
-    ) : null;
-  }, [isHovered, lowerCaseWord]);
-
+  // 清理定时器
   useEffect(() => {
     return () => {
       if (timeoutId.current) {
@@ -119,6 +147,101 @@ function WordHighlighter({
       }
     };
   }, []);
+
+  return { handleMouseEnter, handleMouseLeave };
+}
+
+// 拆分出的自定义Hook：处理顶层tooltip管理
+function useTopLevelTooltip(
+  isHovered: boolean,
+  lowerCaseWord: string,
+  tooltipPosition: { x: number; y: number },
+) {
+  const tooltipRootRef = useRef<HTMLDivElement | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (isHovered) {
+      // 创建顶层tooltip容器
+      let tooltipContainer = document.getElementById(
+        'word-tooltip-container',
+      );
+      if (!tooltipContainer) {
+        tooltipContainer = document.createElement('div');
+        tooltipContainer.id = 'word-tooltip-container';
+        document.body.appendChild(tooltipContainer);
+      }
+
+      // 创建tooltip根元素
+      tooltipRootRef.current =
+        document.createElement('div');
+      tooltipRootRef.current.style.position = 'absolute';
+      tooltipRootRef.current.style.left = `${tooltipPosition.x}px`;
+      tooltipRootRef.current.style.top = `${tooltipPosition.y + 10}px`; // 鼠标下方10px
+      tooltipRootRef.current.style.zIndex = '10000';
+
+      tooltipContainer.appendChild(tooltipRootRef.current);
+
+      // 渲染tooltip
+      const root = createRoot(tooltipRootRef.current);
+      root.render(<HoverTooltip word={lowerCaseWord} />);
+    } else {
+      // 卸载tooltip
+      if (tooltipRootRef.current) {
+        const root = createRoot(tooltipRootRef.current);
+        root.unmount();
+        tooltipRootRef.current.remove();
+        tooltipRootRef.current = null;
+      }
+    }
+
+    return () => {
+      // 清理函数
+      if (tooltipRootRef.current) {
+        const root = createRoot(tooltipRootRef.current);
+        root.unmount();
+        tooltipRootRef.current.remove();
+      }
+    };
+  }, [isHovered, lowerCaseWord, tooltipPosition]);
+
+  return tooltipRootRef;
+}
+
+function WordHighlighter({
+  originalWord,
+  lowerCaseWord,
+}: WordHighlighterProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
+  const [hasTriggered, setHasTriggered] = useState(false);
+
+  // 使用拆分后的自定义Hook
+  const { isDeleted, setIsDeleted } =
+    useWordStatus(lowerCaseWord);
+  useDeleteEventListener(
+    lowerCaseWord,
+    setIsDeleted,
+    setIsHovered,
+    setHasTriggered,
+  );
+  const { handleMouseEnter, handleMouseLeave } =
+    useMouseEvents(
+      isDeleted,
+      hasTriggered,
+      setIsHovered,
+      setHasTriggered,
+      setTooltipPosition,
+    );
+  const tooltipRootRef = useTopLevelTooltip(
+    isHovered,
+    lowerCaseWord,
+    tooltipPosition,
+  );
 
   // 如果单词已被删除，渲染原始文本而不是带下划线的单词
   if (isDeleted) {
@@ -164,7 +287,6 @@ function WordHighlighter({
           }}
         />
       </span>
-      {tooltipComponent}
     </button>
   );
 }

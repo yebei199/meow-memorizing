@@ -16,10 +16,13 @@ export default defineConfig({
   manifest: {
     description: '记单词的小插件',
     permissions: ['storage'],
+    homepage_url:
+      'https://github.com/yebei199/meow-memorizing',
   },
   webExt: {
     startUrls: [
-      'https://www.google.com/search?q=Tiny+Glade+used+bevy%3F&oq=Tiny+Glade+used+bevy%3F&gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCDgxMDNqMGo3qAIIsAIB&sourceid=chrome&ie=UTF-8',
+      'https://wxt.dev/guide/introduction.html',
+      'https://github.com/trending?since=daily',
     ],
   },
 });
