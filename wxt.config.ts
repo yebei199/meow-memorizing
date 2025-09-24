@@ -19,7 +19,7 @@ export default defineConfig({
   },
   webExt: {
     startUrls: [
-      'https://wxt.dev/get-started/migrate-to-wxt.html',
+      'https://www.google.com/search?q=Tiny+Glade+used+bevy%3F&oq=Tiny+Glade+used+bevy%3F&gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCDgxMDNqMGo3qAIIsAIB&sourceid=chrome&ie=UTF-8',
     ],
   },
 });
