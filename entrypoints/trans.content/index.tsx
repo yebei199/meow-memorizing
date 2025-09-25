@@ -4,7 +4,7 @@ import { initThemeObserver } from '@/src/core/themeDetector';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
-  cssInjectionMode: 'manifest',
+  cssInjectionMode: 'ui',
   runAt: 'document_end',
   async main() {
     // 初始化主题观察器

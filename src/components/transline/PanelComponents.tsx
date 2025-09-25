@@ -88,7 +88,9 @@ export function LoadedPanel({
       <span className='flex justify-between items-center'>
         <span style={{ color: 'inherit' }}>
           查询次数:
-          <span className='inline break-words ml-2 font-semibold'>
+          <span
+            className='bg-amber-300 text-amber-600 inline break-words ml-2 font-semibold'
+          >
             {wordLocalInfoOuter?.queryTimes}
           </span>
         </span>
