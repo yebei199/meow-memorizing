@@ -47,7 +47,7 @@
     "lie": "^3.3.0",
     "lint-staged": "^16.1.6",
     "oxlint": "^1.16.0",
-    "oxlint-tsgolint": "^0.1.6",
+    "oxlint-tsgolint": "^0.2.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "wxt": "^0.20.11"
