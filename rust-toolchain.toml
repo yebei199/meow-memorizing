@@ -1,0 +1,11 @@
+# Toolchain intent for portability and rustup-based machines.
+#
+# On the primary NixOS host there is no rustup: the toolchain and the
+# wasm32 std are provided declaratively by ~/nixos_config (rust-overlay).
+# This file documents the required channel/targets and provisions them on
+# any rustup-managed machine (e.g. a non-nix contributor or CI).
+[toolchain]
+channel = "stable"
+profile = "default"
+targets = ["wasm32-unknown-unknown"]
+components = ["rust-src", "clippy", "rustfmt"]

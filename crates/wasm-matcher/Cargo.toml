@@ -1,0 +1,18 @@
+[package]
+name = "wasm-matcher"
+edition.workspace = true
+version.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "matcher"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+aho-corasick = { workspace = true }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+console_error_panic_hook = { workspace = true }

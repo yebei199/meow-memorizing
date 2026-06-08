@@ -1,0 +1,40 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+publish = false
+rust-version = "1.96.0"
+
+[profile.dev]
+incremental = true
+opt-level = 0
+
+[profile.dev.package."*"]
+opt-level = 1
+
+[profile.test]
+inherits = "dev"
+
+# wasm crates require --release (browser payload size + runtime perf).
+[profile.release]
+incremental = false
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[workspace.dependencies]
+# Multi-pattern matching engine for the word scanner.
+aho-corasick = "1"
+
+# wasm boundary. CLI is pinned to 0.2.121 via nix; the crate must match
+# exactly.
+wasm-bindgen = "=0.2.121"
+js-sys = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
