@@ -9,5 +9,11 @@ Frontend glue for the Rust→WASM word matcher (`crates/wasm-matcher`).
   `matcher-inline.ts` base64 payload). Gitignored; rebuild before
   `compile`/`build`.
 
-The wordsList parsing + automata-caching wrapper lives in
-`src/content-scripts/matcherFacade.ts`.
+`matcherLoader` runs only in the **background service worker**
+(`entrypoints/background.ts`): a content script lives in the host page's
+isolated world and inherits the page CSP, so on sites without
+`wasm-unsafe-eval` (GitHub, X, …) `new WebAssembly.Module` throws
+`CompileError`. The worker's extension CSP permits WASM. Content scripts reach
+the matcher over messaging through `src/content-scripts/matcherFacade.ts`,
+which parses the wordsList into active/deleted sets and skips re-syncing the
+worker when they are unchanged.

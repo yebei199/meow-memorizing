@@ -19,6 +19,12 @@ extension: `bun run build`, and the wasm glue from `bun run wasm`).
 - `matcher.bench.spec.ts` — imports the real wasm module and asserts its
   matches equal an independent correct JS oracle on a large input; records
   both timings. Does not need the extension loaded.
+- `csp-matcher.spec.ts` — guards the strict-CSP fix: injects the real content
+  bundle into a page carrying a GitHub-like CSP (no `wasm-unsafe-eval`) and
+  routes the bundle's matcher messages to a second CSP-free page running the
+  WASM matcher (a stand-in for the background worker). Asserts a selected word
+  still highlights page-wide. Does not load the extension, so it runs
+  everywhere; needs a fresh `bun run build`.
 
 Browser: system Chrome (no Playwright-managed binary). Override the path with
 `PLAYWRIGHT_CHROME`.

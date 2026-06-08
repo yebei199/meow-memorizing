@@ -21,7 +21,7 @@ export function getAllTextNodes(): Text[] {
         if (processedTextNodes.has(node as Text)) {
           return NodeFilter.FILTER_REJECT;
         }
-        
+
         // 检查父元素是否属于翻译面板
         let parent = node.parentElement;
         while (parent) {
@@ -78,11 +78,15 @@ export async function processTextNode(
   findMatchingWords: (
     text: string,
     wordsList: Record<string, any>,
-  ) => { index: number; word: string; end: number }[],
+  ) =>
+    | { index: number; word: string; end: number }[]
+    | Promise<
+        { index: number; word: string; end: number }[]
+      >,
 ): Promise<void> {
   // 标记为已处理
   processedTextNodes.add(textNode);
-  
+
   const text = textNode.textContent || '';
   if (!text.trim()) return;
 
@@ -104,7 +108,7 @@ export async function processTextNode(
     return; // 已经处理过，跳过
   }
 
-  const matches = findMatchingWords(text, wordsList);
+  const matches = await findMatchingWords(text, wordsList);
 
   // 如果没有匹配的单词，直接返回
   if (matches.length === 0) return;
@@ -199,7 +203,7 @@ export function restoreOriginalTextNode(
 
     // 替换节点
     parent.replaceChild(textNode, wordElement);
-    
+
     // 从已处理集合中移除对应的文本节点
     processedTextNodes.delete(textNode);
   }

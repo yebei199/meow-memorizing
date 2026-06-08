@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { onMessage } from '@/src/core/messaging';
+import { ensureMatcher } from '@/src/wasm/matcherLoader';
 
 export default defineBackground({
   // Set manifest options
@@ -20,6 +21,19 @@ export default defineBackground({
           throw error;
         }
       },
+    );
+
+    // The WASM matcher runs here, not in the content script: the worker's
+    // extension CSP permits `new WebAssembly.Module`, while strict host-page
+    // CSPs (GitHub etc.) block it in the content-script isolated world.
+    onMessage('matcherSetWords', ({ data }) => {
+      ensureMatcher().setWords(data.active, data.deleted);
+    });
+    onMessage('matcherFindMatches', ({ data }) =>
+      ensureMatcher().findMatches(data.text),
+    );
+    onMessage('matcherFindDeleted', ({ data }) =>
+      ensureMatcher().findDeletedMatches(data.text),
     );
   },
 });
