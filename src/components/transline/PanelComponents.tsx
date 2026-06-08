@@ -1,100 +1,213 @@
-import type { IWordStorage } from '@/src/core/types';
+import type React from 'react'
+import type { IWordStorage } from '@/src/core/types'
 
-// 加载中面板组件
-export function LoadingPanel() {
-  return (
-    <div style={{ textAlign: 'center', padding: '20px' }}>
-      加载中...
-    </div>
-  );
+const surfaceStyle: React.CSSProperties = {
+  position: 'relative',
+  padding: '18px 18px 16px',
+  background:
+    'radial-gradient(circle at top left, rgba(255,255,255,0.94), transparent 42%), linear-gradient(180deg, rgba(255,252,245,0.98), rgba(255,244,226,0.95))',
 }
 
-// 已加载面板组件
+const actionButtonStyle: React.CSSProperties = {
+  border: '1px solid rgba(191, 122, 41, 0.12)',
+  borderRadius: '999px',
+  padding: '8px 12px',
+  fontSize: '12px',
+  fontWeight: 700,
+  cursor: 'pointer',
+}
+
+/**
+ * Loading state for the translation card.
+ */
+export function LoadingPanel() {
+  return (
+    <div style={{ ...surfaceStyle, textAlign: 'center', padding: '28px 20px' }}>
+      <div
+        style={{
+          fontSize: '12px',
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+          color: '#b77b35',
+          marginBottom: '10px',
+        }}
+      >
+        Translating
+      </div>
+      <div style={{ color: '#4b3a24' }}>正在获取释义...</div>
+    </div>
+  )
+}
+
+/**
+ * Resolved state for the translation card.
+ */
 export function LoadedPanel({
   word,
   dataEnd,
   wordLocalInfoOuter,
   handleDeleteWord,
+  mode,
+  onClose,
+  onSaveWord,
+  isWordSaved,
 }: {
-  word: string;
-  dataEnd: string;
-  wordLocalInfoOuter?: IWordStorage;
-  handleAddQuery: () => void;
-  handleDeleteWord: () => void;
+  word: string
+  dataEnd: string
+  wordLocalInfoOuter?: IWordStorage
+  handleDeleteWord: () => void
+  mode: 'stored' | 'selection'
+  onClose?: () => void
+  onSaveWord: () => void
+  isWordSaved: boolean
 }) {
+  const isSelectionMode = mode === 'selection'
+
   return (
-    <div style={{ position: 'relative' }}>
-      {/* 删除按钮 - 红色X在右上角 */}
-      <button
-        type='button'
-        onClick={handleDeleteWord}
-        title='删除单词（不再查询该单词）'
+    <div style={surfaceStyle}>
+      <div
         style={{
-          position: 'absolute',
-          top: '0',
-          right: '0',
-          width: '24px',
-          height: '24px',
-          backgroundColor: 'transparent',
-          border: 'none',
-          color: '#ff4444',
-          fontSize: '18px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000,
-          borderRadius: '50%',
-          transition: 'background-color 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor =
-            'rgba(255, 0, 0, 0.1)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor =
-            'transparent';
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '12px',
+          marginBottom: '12px',
         }}
       >
-        ×
-      </button>
+        <div>
+          <div
+            style={{
+              fontSize: '11px',
+              fontWeight: 800,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: '#b77b35',
+              marginBottom: '6px',
+            }}
+          >
+            {isSelectionMode ? 'Selected Word' : 'Saved Word'}
+          </div>
+          <h1
+            style={{
+              margin: 0,
+              color: '#2c2015',
+              fontSize: '28px',
+              lineHeight: '1.1',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+            }}
+          >
+            {word}
+          </h1>
+        </div>
 
-      <h1
-        className={'text-center text-xl font-bold mb-3'}
+        <button
+          type='button'
+          aria-label='关闭翻译卡片'
+          onClick={onClose}
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            border: '1px solid rgba(191, 122, 41, 0.14)',
+            background: 'rgba(255, 255, 255, 0.7)',
+            color: '#8f5c1d',
+            fontSize: '18px',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      <div
         style={{
-          color: 'inherit',
-          fontFamily: 'inherit',
-          textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)',
-          paddingRight: '24px', // 为右上角的X按钮留出空间
+          height: '1px',
+          background:
+            'linear-gradient(90deg, rgba(255,179,71,0), rgba(255,179,71,0.65), rgba(255,179,71,0))',
         }}
-      >
-        {word}
-      </h1>
+      />
 
-      <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
       <p
-        className={'break-words my-4'}
+        className='break-words'
         style={{
-          color: 'inherit',
-          fontFamily: 'inherit',
+          margin: '16px 0',
+          color: '#44311e',
           whiteSpace: 'pre-line',
+          fontSize: '15px',
         }}
       >
         {dataEnd}
       </p>
 
-      <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
-      <span className='flex justify-between items-center'>
-        <span style={{ color: 'inherit' }}>
-          查询次数:
-          <span
-            className='bg-amber-300 text-amber-600 inline break-words ml-2 font-semibold'
-          >
-            {wordLocalInfoOuter?.queryTimes}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '10px',
+          paddingTop: '14px',
+          borderTop: '1px solid rgba(191, 122, 41, 0.12)',
+        }}
+      >
+        {isSelectionMode ? (
+          <span style={{ fontSize: '12px', color: '#6d5436' }}>
+            选词只弹卡片，不会自动加入词库。
           </span>
-        </span>
-      </span>
+        ) : (
+          <span style={{ color: '#6d5436', fontSize: '12px' }}>
+            查询次数:
+            <span
+              style={{
+                marginLeft: '8px',
+                display: 'inline-block',
+                minWidth: '28px',
+                textAlign: 'center',
+                borderRadius: '999px',
+                background: '#ffe6b3',
+                color: '#9b5f12',
+                padding: '2px 8px',
+                fontWeight: 800,
+              }}
+            >
+              {wordLocalInfoOuter?.queryTimes ?? 0}
+            </span>
+          </span>
+        )}
+
+        {isSelectionMode ? (
+          <button
+            type='button'
+            onClick={onSaveWord}
+            disabled={isWordSaved}
+            style={{
+              ...actionButtonStyle,
+              background: isWordSaved ? '#f3eadf' : '#ffb347',
+              color: isWordSaved ? '#7d6750' : '#3d2400',
+              boxShadow: isWordSaved
+                ? 'none'
+                : '0 10px 18px rgba(255, 179, 71, 0.25)',
+              cursor: isWordSaved ? 'default' : 'pointer',
+            }}
+          >
+            {isWordSaved ? '已在词库' : '加入词库'}
+          </button>
+        ) : (
+          <button
+            type='button'
+            onClick={handleDeleteWord}
+            title='删除单词（不再查询该单词）'
+            style={{
+              ...actionButtonStyle,
+              background: 'rgba(255, 92, 92, 0.1)',
+              color: '#c43d3d',
+            }}
+          >
+            移除单词
+          </button>
+        )}
+      </div>
     </div>
-  );
+  )
 }

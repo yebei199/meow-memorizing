@@ -73,18 +73,19 @@ export async function fetchData(
     { data: string; timestamp: number }
   >,
   CACHE_EXPIRY: number,
+  mode: 'stored' | 'selection' = 'stored',
 ) {
-  // 检查单词是否已被删除
-  const wordInfo = await queryWord(word);
-  if (wordInfo && wordInfo.isDeleted) {
-    setWordLocalInfoOuter(wordInfo);
-    setDataEnd('该单词已被删除，不再显示翻译');
-    setLoading(false);
-    return;
-  }
-  
   const wordLocalInfo = await queryWord(word);
-  if (!wordLocalInfo) return;
+  if (mode === 'stored') {
+    if (wordLocalInfo && wordLocalInfo.isDeleted) {
+      setWordLocalInfoOuter(wordLocalInfo);
+      setDataEnd('该单词已被删除，不再显示翻译');
+      setLoading(false);
+      return;
+    }
+
+    if (!wordLocalInfo) return;
+  }
 
   // 先检查缓存
   const cachedResult = await handleCachedData(

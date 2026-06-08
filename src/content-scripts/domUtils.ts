@@ -5,6 +5,8 @@ import TransLine from '@/src/components/transline/TransLine.tsx';
 const originalTextMap = new WeakMap<Text, string>();
 // 用于标记已处理的文本节点
 const processedTextNodes = new WeakSet<Text>();
+const IGNORE_SELECTOR =
+  '[data-meow-ignore="true"], [data-meow-tooltip-root]';
 
 /**
  * 获取页面所有文本节点，排除翻译面板中的文本节点
@@ -25,6 +27,7 @@ export function getAllTextNodes(): Text[] {
         while (parent) {
           // 检查是否是翻译面板相关的元素
           if (
+            parent.matches(IGNORE_SELECTOR) ||
             parent.hasAttribute('data-word') ||
             (parent instanceof HTMLElement &&
               // 检查是否有面板相关的样式特征
@@ -95,7 +98,9 @@ export async function processTextNode(
   // 检查是否已经有处理过的标记
   if (
     parent instanceof Element &&
-    parent.querySelector('p[data-word]')
+    (parent.matches(IGNORE_SELECTOR) ||
+      parent.closest(IGNORE_SELECTOR) ||
+      parent.querySelector('p[data-word]'))
   ) {
     return; // 已经处理过，跳过
   }

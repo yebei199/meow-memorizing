@@ -188,6 +188,8 @@ function useTopLevelTooltip(
       // 创建tooltip根元素
       tooltipRootRef.current =
         document.createElement('div');
+      tooltipRootRef.current.dataset.meowIgnore = 'true';
+      tooltipRootRef.current.dataset.meowTooltipRoot = 'stored';
       tooltipRootRef.current.style.position = 'absolute';
       // 将面板定位在鼠标的正下方（居中对齐）
       tooltipRootRef.current.style.left = `${tooltipPosition.x - 150}px`; // 300px宽度的一半
@@ -225,7 +227,15 @@ function useTopLevelTooltip(
 
       // 渲染tooltip
       const root = createRoot(tooltipRootRef.current);
-      root.render(<HoverTooltip word={lowerCaseWord} />);
+      root.render(
+        <HoverTooltip
+          word={lowerCaseWord}
+          onClose={() => {
+            setIsHovered(false);
+            setHasTriggered(false);
+          }}
+        />,
+      );
     } else {
       // 卸载tooltip
       if (tooltipRootRef.current) {
@@ -312,6 +322,7 @@ function WordHighlighter({
 
   return (
     <button
+      data-meow-word-trigger='true'
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{

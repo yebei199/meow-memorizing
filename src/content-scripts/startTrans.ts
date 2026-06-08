@@ -7,6 +7,8 @@ import { findMatchingWords } from './matcherFacade'
 
 let domObserver: MutationObserver | null = null;
 let debounceTimer: number | null = null;
+const IGNORE_SELECTOR =
+  '[data-meow-ignore="true"], [data-meow-tooltip-root]';
 
 /**
  * 检查变化是否与翻译面板相关
@@ -18,6 +20,13 @@ function isMutationRelatedToTranslationPanel(mutations: MutationRecord[]): boole
       // 检查添加的节点
       for (const node of Array.from(mutation.addedNodes)) {
         if (node instanceof Element) {
+          if (
+            node.matches(IGNORE_SELECTOR) ||
+            node.closest(IGNORE_SELECTOR)
+          ) {
+            return true;
+          }
+
           // 检查节点是否有特定的属性或类名，表明它是翻译面板的一部分
           if (
             node.hasAttribute('data-word') ||    // 单词元素
@@ -48,6 +57,8 @@ function isMutationRelatedToTranslationPanel(mutations: MutationRecord[]): boole
       for (const node of Array.from(mutation.removedNodes)) {
         if (node instanceof Element) {
           if (
+            node.matches(IGNORE_SELECTOR) ||
+            node.closest(IGNORE_SELECTOR) ||
             node.hasAttribute('data-word') ||   // 单词元素
             (node.closest && node.closest('[data-word]'))         // 单词元素的子元素
           ) {
@@ -74,12 +85,27 @@ async function processAddedTextNodes(addedNodes: NodeList): Promise<void> {
     if (node.nodeType === Node.TEXT_NODE && node.textContent && node.textContent.trim().length > 0) {
       textNodes.push(node as Text);
     } else if (node instanceof Element) {
+      if (
+        node.matches(IGNORE_SELECTOR) ||
+        node.closest(IGNORE_SELECTOR)
+      ) {
+        continue;
+      }
+
       // 遍历元素的子节点查找文本节点
       const walker = document.createTreeWalker(
         node,
         NodeFilter.SHOW_TEXT,
         {
           acceptNode: (textNode) => {
+            if (
+              textNode.parentElement?.closest(
+                IGNORE_SELECTOR,
+              )
+            ) {
+              return NodeFilter.FILTER_REJECT;
+            }
+
             if (
               textNode.nodeType === Node.TEXT_NODE &&
               textNode.textContent &&

@@ -11,6 +11,9 @@ extension: `bun run build`, and the wasm glue from `bun run wasm`).
   asserts the content script (WASM) highlights it. Covers the CJK
   UTF-16-offset path. Auto-skips when the extension's service worker can't be
   reached (see below).
+- `selection-tooltip.spec.ts` — opens a real Google search page, selects a
+  word in that page context, and asserts a transient translation card appears
+  without nested highlight markup inside the card.
 - `matcher.bench.spec.ts` — imports the real wasm module and asserts its
   matches equal an independent correct JS oracle on a large input; records
   both timings. Does not need the extension loaded.
