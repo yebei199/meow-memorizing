@@ -23,9 +23,10 @@ export default defineBackground({
       },
     );
 
-    // The WASM matcher runs here, not in the content script: the worker's
-    // extension CSP permits `new WebAssembly.Module`, while strict host-page
-    // CSPs (GitHub etc.) block it in the content-script isolated world.
+    // The WASM matcher runs here, not in the content script: host-page CSPs
+    // still block `new WebAssembly.Module` in the content-script isolated
+    // world, and the extension worker must explicitly opt into
+    // `wasm-unsafe-eval` via MV3 `content_security_policy`.
     onMessage('matcherSetWords', ({ data }) => {
       ensureMatcher().setWords(data.active, data.deleted);
     });
