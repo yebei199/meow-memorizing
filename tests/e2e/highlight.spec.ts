@@ -35,7 +35,7 @@ test('highlights a stored word on the page', async ({
 
   // Content script applies highlights after its startup delay. Both "hello"
   // occurrences (one after CJK) should be wrapped.
-  const highlighted = page.locator('p[data-word="hello"]')
+  const highlighted = page.locator('[data-word="hello"]')
   await expect(highlighted.first()).toBeVisible({
     timeout: 15000,
   })

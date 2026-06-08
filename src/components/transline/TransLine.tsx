@@ -19,7 +19,7 @@ export default function TransLine({
   // 如果单词被删除，我们应该在T2组件中处理
 
   return (
-    <p
+    <span
       className='inline m-0 p-0 border-0 bg-transparent text-inherit font-inherit'
       style={{
         display: 'inline',
@@ -36,6 +36,6 @@ export default function TransLine({
         originalWord={originalWord}
         lowerCaseWord={lowerCaseWord}
       />
-    </p>
+    </span>
   );
 }

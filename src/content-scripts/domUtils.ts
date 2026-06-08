@@ -126,8 +126,8 @@ export async function processTextNode(
       );
     }
 
-    // 直接使用 p 标签包裹单词，避免嵌套
-    const wordElement = document.createElement('p');
+    // Use an inline wrapper so links/headings keep valid phrasing content.
+    const wordElement = document.createElement('span');
     wordElement.setAttribute(
       'data-word',
       match.word.toLowerCase(),
@@ -178,7 +178,7 @@ export function restoreOriginalTextNode(
 ): void {
   // 查找包含特定单词的元素
   const wordElements = container.querySelectorAll(
-    `p[data-word="${word.toLowerCase()}"]`,
+    `[data-word="${word.toLowerCase()}"]`,
   );
 
   // 从后往前遍历，避免在修改DOM时影响NodeList

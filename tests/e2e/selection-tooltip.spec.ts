@@ -91,7 +91,7 @@ test('shows a translation card for selected text on Google search pages', async 
   await expect(
     tooltip.locator('[data-meow-word-trigger="true"]'),
   ).toHaveCount(0)
-  await expect(page.locator('p[data-word="serendipity"]')).toHaveCount(1)
+  await expect(page.locator('[data-word="serendipity"]')).toHaveCount(1)
 })
 
 test('selecting a word immediately updates all existing matches on the page', async ({
@@ -161,7 +161,52 @@ test('selecting a word immediately updates all existing matches on the page', as
     tooltip.getByRole('button', { name: '加入词库' }),
   ).toHaveCount(0)
 
-  const highlighted = page.locator('p[data-word="hello"]')
+  const highlighted = page.locator('[data-word="hello"]')
   await expect(highlighted.first()).toBeVisible({ timeout: 15000 })
   await expect(highlighted).toHaveCount(2)
+})
+
+test('highlights and opens hover cards inside github-like inline links', async ({
+  context,
+  page,
+}) => {
+  const worker = await getServiceWorker(context)
+  test.skip(
+    !worker,
+    'Unpacked MV3 extension/service worker unavailable in this environment.',
+  )
+
+  await worker!.evaluate(async () => {
+    await chrome.storage.sync.set({
+      myWords: {
+        reddit: {
+          word: 'reddit',
+          isDeleted: false,
+          queryTimes: 1,
+          deleteTimes: 0,
+        },
+      },
+    })
+  })
+
+  await context.route('https://cn.bing.com/dict/clientsearch**', async (route) => {
+    await route.fulfill({
+      contentType: 'text/html; charset=utf-8',
+      body: bingResponse,
+    })
+  })
+
+  await page.goto('http://127.0.0.1:5199/sample.html')
+
+  const highlighted = page.locator('[data-word="reddit"]')
+  await expect(highlighted).toHaveCount(2, { timeout: 15000 })
+  await expect(highlighted.first()).toBeVisible()
+
+  const trigger = page.locator('[data-meow-word-trigger="true"]').first()
+  await trigger.hover()
+
+  const tooltip = page.locator('[data-meow-tooltip-root="stored"]')
+  await expect(tooltip).toBeVisible({ timeout: 15000 })
+  await expect(tooltip).toContainText('reddit')
+  await expect(tooltip).toContainText('lucky discovery')
 })

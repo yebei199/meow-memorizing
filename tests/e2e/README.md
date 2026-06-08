@@ -13,7 +13,9 @@ extension: `bun run build`, and the wasm glue from `bun run wasm`).
   reached (see below).
 - `selection-tooltip.spec.ts` — opens a real Google search page, selects a
   word in that page context, and asserts a transient translation card appears
-  without nested highlight markup inside the card.
+  without nested highlight markup inside the card; also covers immediate
+  page-wide highlighting after selection and a GitHub-like inline-link DOM
+  regression.
 - `matcher.bench.spec.ts` — imports the real wasm module and asserts its
   matches equal an independent correct JS oracle on a large input; records
   both timings. Does not need the extension loaded.
