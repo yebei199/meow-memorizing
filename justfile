@@ -7,12 +7,14 @@ default:
 # ── Dev ──────────────────────────────────────────────────────────────────────
 
 # Start WXT dev server (hot-reload, Chrome)
+[no-exit-message]
 dev:
-    bun run dev
+    exec bun run dev
 
 # Start WXT dev server for Firefox
+[no-exit-message]
 dev-ff:
-    bun run dev:firefox
+    exec bun run dev:firefox
 
 # ── Build ────────────────────────────────────────────────────────────────────
 
