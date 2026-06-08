@@ -1,12 +1,14 @@
 import { createRoot } from 'react-dom/client';
-import TransLine from '@/src/components/transline/TransLine.tsx';
+import HighlightedText from '@/src/components/transline/HighlightedText.tsx';
 
-// 用于存储原始文本节点的WeakMap
-const originalTextMap = new WeakMap<Text, string>();
 // 用于标记已处理的文本节点
 let processedTextNodes = new WeakSet<Text>();
+// Marks a span that wraps one text node's React-managed highlight tree. Its
+// subtree must be skipped on rescans (it is owned by React), but unlike
+// data-meow-ignore it stays selectable so users can still query words inside it.
+const WRAPPED_ATTR = 'data-meow-wrapped';
 const IGNORE_SELECTOR =
-  '[data-meow-ignore="true"], [data-meow-tooltip-root]';
+  '[data-meow-ignore="true"], [data-meow-tooltip-root], [data-meow-wrapped]';
 
 /**
  * 获取页面所有文本节点，排除翻译面板中的文本节点
@@ -90,11 +92,6 @@ export async function processTextNode(
   const text = textNode.textContent || '';
   if (!text.trim()) return;
 
-  // 保存原始文本内容
-  if (!originalTextMap.has(textNode)) {
-    originalTextMap.set(textNode, text);
-  }
-
   // 检查父元素是否已经处理过
   const parent = textNode.parentNode;
   if (!parent) return;
@@ -113,100 +110,26 @@ export async function processTextNode(
   // 如果没有匹配的单词，直接返回
   if (matches.length === 0) return;
 
-  // 创建文档片段来保持原有结构
-  const fragment = document.createDocumentFragment();
-  let lastProcessedIndex = 0;
+  // One inline wrapper + one React root per text node. The wrapper keeps valid
+  // phrasing content inside links/headings; its subtree is React-managed, so it
+  // is marked WRAPPED_ATTR to be skipped on rescans. Word deletion is handled
+  // reactively inside the tree (T2 listens for the deleteWord event), so no
+  // manual DOM surgery is needed afterwards.
+  const wrapper = document.createElement('span');
+  wrapper.setAttribute(WRAPPED_ATTR, 'true');
+  wrapper.style.display = 'inline';
+  wrapper.style.verticalAlign = 'baseline';
+  wrapper.style.margin = '0';
+  wrapper.style.padding = '0';
+  wrapper.style.border = 'none';
+  wrapper.style.background = 'none';
+  wrapper.style.color = 'inherit';
+  wrapper.style.font = 'inherit';
 
-  // 处理匹配的单词
-  for (const match of matches) {
-    // 添加匹配单词之前的文本
-    if (match.index > lastProcessedIndex) {
-      const textBefore = text.substring(
-        lastProcessedIndex,
-        match.index,
-      );
-      fragment.appendChild(
-        document.createTextNode(textBefore),
-      );
-    }
+  parent.replaceChild(wrapper, textNode);
 
-    // Use an inline wrapper so links/headings keep valid phrasing content.
-    const wordElement = document.createElement('span');
-    wordElement.setAttribute(
-      'data-word',
-      match.word.toLowerCase(),
-    );
-    wordElement.textContent = match.word; // 保持原始格式
-    wordElement.style.display = 'inline';
-    wordElement.style.verticalAlign = 'baseline';
-    wordElement.style.margin = '0';
-    wordElement.style.padding = '0';
-    wordElement.style.border = 'none';
-    wordElement.style.background = 'none';
-    wordElement.style.color = 'inherit';
-    wordElement.style.font = 'inherit';
-    wordElement.style.position = 'relative';
-
-    fragment.appendChild(wordElement);
-
-    // 为单词创建React组件，传递原始格式的单词用于显示，小写版本用于查询
-    const root = createRoot(wordElement);
-    root.render(
-      TransLine({
-        originalWord: match.word,
-        lowerCaseWord: match.word.toLowerCase(),
-      }),
-    );
-
-    lastProcessedIndex = match.end;
-  }
-
-  // 添加最后剩余的文本
-  if (lastProcessedIndex < text.length) {
-    const textAfter = text.substring(lastProcessedIndex);
-    fragment.appendChild(
-      document.createTextNode(textAfter),
-    );
-  }
-
-  // 替换原文本节点
-  parent.replaceChild(fragment, textNode);
-}
-
-/**
- * 恢复文本节点到原始状态（用于删除单词时）
- */
-export function restoreOriginalTextNode(
-  container: Element,
-  word: string,
-): void {
-  // 查找包含特定单词的元素
-  const wordElements = container.querySelectorAll(
-    `[data-word="${word.toLowerCase()}"]`,
-  );
-
-  // 从后往前遍历，避免在修改DOM时影响NodeList
-  for (let i = wordElements.length - 1; i >= 0; i--) {
-    const wordElement = wordElements[i];
-    const parent = wordElement.parentNode;
-    if (!parent) continue;
-
-    // 获取原始文本
-    const originalText = wordElement.textContent || '';
-
-    // 创建文本节点替换React组件
-    const textNode = document.createTextNode(originalText);
-
-    // 卸载React组件
-    const root = createRoot(wordElement);
-    root.unmount();
-
-    // 替换节点
-    parent.replaceChild(textNode, wordElement);
-
-    // 从已处理集合中移除对应的文本节点
-    processedTextNodes.delete(textNode);
-  }
+  const root = createRoot(wrapper);
+  root.render(HighlightedText({ text, matches }));
 }
 
 /**

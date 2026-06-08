@@ -255,6 +255,7 @@ function WordHighlighter({
     <button
       ref={anchorRef}
       data-meow-word-trigger='true'
+      data-word={lowerCaseWord}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{

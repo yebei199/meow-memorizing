@@ -8,7 +8,7 @@ import { findMatchingWords } from './matcherFacade'
 let domObserver: MutationObserver | null = null;
 let debounceTimer: number | null = null;
 const IGNORE_SELECTOR =
-  '[data-meow-ignore="true"], [data-meow-tooltip-root]';
+  '[data-meow-ignore="true"], [data-meow-tooltip-root], [data-meow-wrapped]';
 
 /**
  * 检查变化是否与翻译面板相关
