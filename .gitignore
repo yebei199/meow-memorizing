@@ -17,6 +17,11 @@ web-ext.config.ts
 # Rust
 /target
 
+# Playwright
+/test-results
+/playwright-report
+.last-run.json
+
 # Generated WASM artifacts (rebuilt by `bun run wasm`)
 /src/wasm/generated
 

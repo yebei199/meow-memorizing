@@ -8,8 +8,13 @@ export default defineConfig({
     // 指定测试环境
     environment: 'node',
 
-    // 匹配测试文件的模式
+    // 匹配测试文件的模式（e2e 由 Playwright 运行，排除）
     include: ['tests/**/*.{test,spec}.{ts,js}'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'tests/e2e/**',
+    ],
 
     // 测试覆盖率配置
     coverage: {
