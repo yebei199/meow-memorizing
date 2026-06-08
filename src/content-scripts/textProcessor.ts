@@ -3,7 +3,7 @@ import {
   getAllTextNodes,
   processTextNode,
 } from './domUtils';
-import { findMatchingWords } from './wordMatcher';
+import { findMatchingWords } from './matcherFacade';
 
 /**
  * 处理页面中的单词

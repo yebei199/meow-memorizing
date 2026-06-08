@@ -3,7 +3,7 @@ import { setupSelectionListener } from './AddButton'
 import { processPageWords } from './ergodicWords'
 import { getAllTextNodes, processTextNode } from './domUtils'
 import { getWordsList } from './storageAction'
-import { findMatchingWords } from './wordMatcher'
+import { findMatchingWords } from './matcherFacade'
 
 let domObserver: MutationObserver | null = null;
 let debounceTimer: number | null = null;
