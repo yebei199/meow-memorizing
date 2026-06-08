@@ -8,11 +8,25 @@ extension: `bun run build`, and the wasm glue from `bun run wasm`).
 - `server.ts` — static server (`:5199`) serving `pages/` at `/` and the
   generated wasm glue at `/wasm/`; started automatically via `webServer`.
 - `highlight.spec.ts` — seeds a word via the service worker, loads a page, and
-  asserts the content script (WASM-first) highlights it. Covers the CJK
-  UTF-16-offset path.
+  asserts the content script (WASM) highlights it. Covers the CJK
+  UTF-16-offset path. Auto-skips when the extension's service worker can't be
+  reached (see below).
 - `matcher.bench.spec.ts` — imports the real wasm module and asserts its
-  matches equal a faithful JS port of the legacy algorithm on a large input;
-  records both timings.
+  matches equal an independent correct JS oracle on a large input; records
+  both timings. Does not need the extension loaded.
 
 Browser: system Chrome (no Playwright-managed binary). Override the path with
 `PLAYWRIGHT_CHROME`.
+
+## Loading the extension (headless limitation)
+
+Chrome (≥ ~128, here 148) refuses `--load-extension` of an unpacked
+extension in headless mode, so `highlight.spec.ts` self-skips on a sandbox/CI
+host with no display. To run it for real, give Chrome a display:
+
+- Local desktop: a headed system Chrome loads the extension normally
+  (`bun run dev` is the manual equivalent).
+- CI / headless host: wrap the run in a virtual display —
+  `xvfb-run -a bun run test:e2e`.
+
+`matcher.bench.spec.ts` does not load the extension and runs everywhere.

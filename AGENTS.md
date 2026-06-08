@@ -2,8 +2,10 @@
 
 WXT + React 19 browser extension (Bun) that highlights words from the
 user's list on any page. The hot path — scanning page text for those words
-— is offloaded to a Rust→WASM Aho-Corasick backend (`crates/wasm-matcher`),
-with the legacy JS implementation kept as a runtime fallback.
+— is handled solely by a Rust→WASM Aho-Corasick backend
+(`crates/wasm-matcher`). There is no JS fallback: a browser without WASM is
+unsupported by design. The loader (`src/wasm/matcherLoader.ts`) throws on
+init failure rather than degrading.
 
 ## Rust Rules
 
@@ -52,6 +54,17 @@ with the legacy JS implementation kept as a runtime fallback.
 - Web: `bun run dev|build|compile`.
 - wasm: `bun run wasm`.
 - e2e: `bun run test:e2e` (Playwright, loads the built extension).
+
+## E2E environment
+
+- Headless Chrome (≥ ~128, host has 148) refuses `--load-extension` of an
+  unpacked extension, so `tests/e2e/highlight.spec.ts` self-skips on a
+  display-less sandbox/CI host. Run it for real with a display:
+  - local desktop: headed system Chrome loads the extension (manual
+    equivalent: `bun run dev`);
+  - CI / headless host: `xvfb-run -a bun run test:e2e`.
+- `tests/e2e/matcher.bench.spec.ts` (WASM correctness + perf) does not load
+  the extension and runs everywhere.
 
 ## Communication
 
