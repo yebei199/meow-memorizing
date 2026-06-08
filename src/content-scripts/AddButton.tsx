@@ -1,3 +1,5 @@
+import { addQueriedWord } from '@/src/core/wordProcessor'
+import { processPageWords } from './ergodicWords'
 import { showSelectionTooltip } from './selectionTooltip'
 
 const VALID_SELECTION_PATTERN = /^[a-zA-Z-]+$/
@@ -19,7 +21,7 @@ function normalizeSelectedWord(text: string): string | null {
  * Listen for completed text selections and show a transient translation card.
  */
 export async function setupSelectionListener(): Promise<void> {
-  document.addEventListener('mouseup', (event) => {
+  document.addEventListener('mouseup', async (event) => {
     const target = event.target
     if (
       target instanceof Element &&
@@ -36,6 +38,11 @@ export async function setupSelectionListener(): Promise<void> {
     if (!word) return
 
     const rect = range.getBoundingClientRect()
+    selection.removeAllRanges()
+
+    await addQueriedWord(word)
+    await processPageWords()
+
     showSelectionTooltip({
       word,
       x: rect.left + rect.width / 2,

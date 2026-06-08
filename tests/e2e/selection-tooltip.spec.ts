@@ -83,13 +83,18 @@ test('shows a translation card for selected text on Google search pages', async 
   await expect(tooltip).toBeVisible({ timeout: 15000 })
   await expect(tooltip).toContainText('serendipity')
   await expect(tooltip).toContainText('lucky discovery')
+  await expect(tooltip).toContainText('已加入词库')
+  await expect(
+    tooltip.getByRole('button', { name: '加入词库' }),
+  ).toHaveCount(0)
   await expect(tooltip.locator('[data-word]')).toHaveCount(0)
   await expect(
     tooltip.locator('[data-meow-word-trigger="true"]'),
   ).toHaveCount(0)
+  await expect(page.locator('p[data-word="serendipity"]')).toHaveCount(1)
 })
 
-test('adding a selected word updates all existing matches on the page', async ({
+test('selecting a word immediately updates all existing matches on the page', async ({
   context,
   page,
 }) => {
@@ -151,8 +156,10 @@ test('adding a selected word updates all existing matches on the page', async ({
 
   const tooltip = page.locator('[data-meow-tooltip-root="selection"]')
   await expect(tooltip).toBeVisible({ timeout: 15000 })
-
-  await tooltip.getByRole('button', { name: '加入词库' }).click()
+  await expect(tooltip).toContainText('已加入词库')
+  await expect(
+    tooltip.getByRole('button', { name: '加入词库' }),
+  ).toHaveCount(0)
 
   const highlighted = page.locator('p[data-word="hello"]')
   await expect(highlighted.first()).toBeVisible({ timeout: 15000 })

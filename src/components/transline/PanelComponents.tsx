@@ -49,8 +49,6 @@ export function LoadedPanel({
   handleDeleteWord,
   mode,
   onClose,
-  onSaveWord,
-  isWordSaved,
 }: {
   word: string
   dataEnd: string
@@ -58,8 +56,6 @@ export function LoadedPanel({
   handleDeleteWord: () => void
   mode: 'stored' | 'selection'
   onClose?: () => void
-  onSaveWord: () => void
-  isWordSaved: boolean
 }) {
   const isSelectionMode = mode === 'selection'
 
@@ -153,7 +149,7 @@ export function LoadedPanel({
       >
         {isSelectionMode ? (
           <span style={{ fontSize: '12px', color: '#6d5436' }}>
-            选词只弹卡片，不会自动加入词库。
+            已加入词库，页面中同词会保持高亮可查。
           </span>
         ) : (
           <span style={{ color: '#6d5436', fontSize: '12px' }}>
@@ -177,22 +173,18 @@ export function LoadedPanel({
         )}
 
         {isSelectionMode ? (
-          <button
-            type='button'
-            onClick={onSaveWord}
-            disabled={isWordSaved}
+          <span
             style={{
-              ...actionButtonStyle,
-              background: isWordSaved ? '#f3eadf' : '#ffb347',
-              color: isWordSaved ? '#7d6750' : '#3d2400',
-              boxShadow: isWordSaved
-                ? 'none'
-                : '0 10px 18px rgba(255, 179, 71, 0.25)',
-              cursor: isWordSaved ? 'default' : 'pointer',
+              borderRadius: '999px',
+              background: '#ffe6b3',
+              color: '#9b5f12',
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: 800,
             }}
           >
-            {isWordSaved ? '已在词库' : '加入词库'}
-          </button>
+            已加入词库
+          </span>
         ) : (
           <button
             type='button'

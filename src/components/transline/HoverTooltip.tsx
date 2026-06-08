@@ -6,11 +6,9 @@ import {
 } from 'react'
 import {
   addWordLocal,
-  getWordsList,
 } from '@/src/core/storageManager'
 import type { IWordStorage } from '@/src/core/types'
 import {
-  addQueriedWord,
   deleteWord,
 } from '@/src/core/wordProcessor'
 import {
@@ -110,7 +108,6 @@ export default function HoverTooltip({
     useState<IWordStorage>()
   const [dataEnd, setDataEnd] = useState('')
   const [loading, setLoading] = useState(true)
-  const [isWordSaved, setIsWordSaved] = useState(false)
 
   useEffect(() => {
     fetchWordData(
@@ -122,30 +119,10 @@ export default function HoverTooltip({
     )
   }, [mode, word])
 
-  useEffect(() => {
-    if (mode !== 'selection') {
-      return
-    }
-
-    getWordsList()
-      .then((wordsList) => {
-        const existingWord = wordsList[word]
-        setIsWordSaved(
-          Boolean(existingWord && !existingWord.isDeleted),
-        )
-      })
-      .catch(console.error)
-  }, [mode, word])
-
   const handleDeleteWord = useWordDelete(
     wordLocalInfoOuter,
     onClose,
   )
-  const handleSaveWord = useCallback(async () => {
-    await addQueriedWord(word)
-    await processPageWords()
-    setIsWordSaved(true)
-  }, [word])
 
   const panelContent = useMemo(() => {
     if (loading) {
@@ -160,15 +137,11 @@ export default function HoverTooltip({
         handleDeleteWord={handleDeleteWord}
         mode={mode}
         onClose={onClose}
-        onSaveWord={handleSaveWord}
-        isWordSaved={isWordSaved}
       />
     )
   }, [
     dataEnd,
     handleDeleteWord,
-    handleSaveWord,
-    isWordSaved,
     loading,
     mode,
     onClose,
