@@ -8,11 +8,15 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
-    "build": "wxt build && bun run src/copy.ts",
-    "build:firefox": "wxt build -b firefox",
+    "wasm": "bash scripts/build-wasm.sh && bun run scripts/inline-wasm.ts",
+    "build": "bun run wasm && wxt build && bun run src/copy.ts",
+    "build:firefox": "bun run wasm && wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
+    "check:rust": "cargo check -p wasm-matcher --target wasm32-unknown-unknown",
+    "lint:rust": "cargo fmt --all --check && cargo clippy -p wasm-matcher --target wasm32-unknown-unknown -- -D warnings",
+    "test:e2e": "playwright test",
     "postinstall": "wxt prepare",
     "prepare": "husky"
   },
