@@ -26,6 +26,7 @@ import { processPageWords } from '@/src/content-scripts/ergodicWords';
 
 interface HoverTooltipProps {
   word: string;
+  style?: React.CSSProperties;
 }
 
 const tooltipStyle: React.CSSProperties = {
@@ -167,6 +168,7 @@ const renderPanelContent = (
  */
 export default function HoverTooltip({
   word,
+  style,
 }: HoverTooltipProps) {
   const [wordLocalInfoOuter, setWordLocalInfoOuter] =
     useState<IWordStorage>();
@@ -206,7 +208,7 @@ export default function HoverTooltip({
       className={
         'position-absolute overflow-auto rounded-2xl p-6'
       }
-      style={tooltipStyle}
+      style={{ ...tooltipStyle, ...style }}
     >
       {panelContent}
     </div>

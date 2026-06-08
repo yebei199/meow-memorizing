@@ -41,7 +41,7 @@ bun run build
 详见 `crates/wasm-matcher/README.md` 与 `src/wasm/README.md`。
 
 构建会自动先生成 WASM (`bun run wasm`)，需要 `wasm32-unknown-unknown`
-目标与匹配版本的 `wasm-bindgen-cli`。
+目标与匹配版本的 `wasm-bindgen-cli`（当前固定为 `0.2.122`）。
 
 # 依赖
 - 框架: WXT + React

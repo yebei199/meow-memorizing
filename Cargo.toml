@@ -31,9 +31,9 @@ strip = true
 # Multi-pattern matching engine for the word scanner.
 aho-corasick = "1"
 
-# wasm boundary. CLI is pinned to 0.2.121 via nix; the crate must match
+# wasm boundary. CLI is pinned to 0.2.122 via nix; the crate must match
 # exactly.
-wasm-bindgen = "=0.2.121"
+wasm-bindgen = "=0.2.122"
 js-sys = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde-wasm-bindgen = "0.6"

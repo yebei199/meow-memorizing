@@ -36,7 +36,7 @@ init failure rather than degrading.
 ## Toolchain
 
 - `wasm32-unknown-unknown` target + `wasm-bindgen-cli` are required. The
-  `wasm-bindgen` crate is pinned to `=0.2.121` to match the CLI exactly; the
+  `wasm-bindgen` crate is pinned to `=0.2.122` to match the CLI exactly; the
   build script verifies this.
 - On the NixOS host the toolchain is declarative (no rustup); rustup machines
   get the target via `rust-toolchain.toml`.

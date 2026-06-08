@@ -10,7 +10,13 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-PINNED="0.2.121"
+# Prefer user-installed cargo binaries when PATH also contains an older
+# profile-managed wasm-bindgen.
+if [ -d "${HOME}/.cargo/bin" ]; then
+    PATH="${HOME}/.cargo/bin:${PATH}"
+fi
+
+PINNED="0.2.122"
 CLI_VER="$(wasm-bindgen --version | awk '{print $2}')"
 if [ "$CLI_VER" != "$PINNED" ]; then
     echo "error: wasm-bindgen CLI $CLI_VER != pinned crate $PINNED" >&2
