@@ -31,10 +31,24 @@ bun run build
 解压后的插件位置: .output\chrome-mv3-build
 之后谷歌浏览器开发者模式直接安装插件即可
 
+## 高性能词匹配 (Rust + WASM)
+
+整页扫描单词的热点计算下沉到 Rust 编译的 WASM 后端
+(`crates/wasm-matcher`)，用 Aho-Corasick 自动机一次扫描全部命中，
+替代原先 `O(文本 × 单词数)` 的 `indexOf` 嵌套循环，匹配性能与单词表
+规模无关 (大词表下实测约 22×)。自动机按单词表缓存复用；WASM 以 base64
+内联进 content script，加载失败自动回退到 JS 实现。详见
+`crates/wasm-matcher/README.md` 与 `src/wasm/README.md`。
+
+构建会自动先生成 WASM (`bun run wasm`)，需要 `wasm32-unknown-unknown`
+目标与匹配版本的 `wasm-bindgen-cli`。
+
 # 依赖
 - 框架: WXT + React
+- 高性能计算: Rust + WASM (aho-corasick)
 - 格式化: biome
 - 包管理: bun
+- 测试: vitest (单元) + Playwright (e2e/基准，`bun run test:e2e`)
 - [版本日志](./docs/CHANGELOG.md)
 
 # 其他
