@@ -66,6 +66,10 @@ fn build(words: &[String]) -> Option<AhoCorasick> {
 
 /// Scan `text` with `ac`, keeping only matches on word boundaries and
 /// converting byte offsets to UTF-16 code-unit offsets.
+///
+/// `find_iter` yields non-overlapping matches with strictly increasing byte
+/// offsets, so a running byte→UTF-16 cursor converts every offset in a single
+/// forward pass — O(n) overall, not O(n) per match.
 fn find(
     ac: Option<&AhoCorasick>,
     text: &str,
@@ -75,14 +79,23 @@ fn find(
     };
     let bytes = text.as_bytes();
     let mut out = Vec::new();
+    let mut byte_cursor = 0usize;
+    let mut u16_cursor = 0usize;
     for m in ac.find_iter(text) {
         let (start, end) = (m.start(), m.end());
+        // Advance the cursor to this match's start, counting UTF-16 units of
+        // the skipped slice once.
+        u16_cursor +=
+            text[byte_cursor..start].encode_utf16().count();
+        byte_cursor = start;
         if !is_word_boundary(bytes, start, end) {
             continue;
         }
-        let index = text[..start].encode_utf16().count();
+        let index = u16_cursor;
         let word = text[start..end].to_string();
         let len16 = word.encode_utf16().count();
+        u16_cursor += len16;
+        byte_cursor = end;
         out.push(Match {
             index,
             word,
