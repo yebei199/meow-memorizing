@@ -1,40 +1,41 @@
 import type React from 'react'
 import type { IWordStorage } from '@/src/core/types'
+import { HAND_FONT, type Theme } from './tooltipTheme'
 
-const surfaceStyle: React.CSSProperties = {
-  position: 'relative',
-  padding: '18px 18px 16px',
-  background:
-    'radial-gradient(circle at top left, rgba(255,255,255,0.94), transparent 42%), linear-gradient(180deg, rgba(255,252,245,0.98), rgba(255,244,226,0.95))',
-}
+const surfacePadding = '20px 20px 18px'
 
 const actionButtonStyle: React.CSSProperties = {
-  border: '1px solid rgba(191, 122, 41, 0.12)',
   borderRadius: '999px',
-  padding: '8px 12px',
+  padding: '8px 14px',
   fontSize: '12px',
   fontWeight: 700,
   cursor: 'pointer',
+  fontFamily: HAND_FONT,
 }
 
 /**
  * Loading state for the translation card.
  */
-export function LoadingPanel() {
+export function LoadingPanel({ theme }: { theme: Theme }) {
   return (
-    <div style={{ ...surfaceStyle, textAlign: 'center', padding: '28px 20px' }}>
+    <div
+      style={{
+        padding: '30px 22px',
+        textAlign: 'center',
+      }}
+    >
       <div
         style={{
           fontSize: '12px',
           letterSpacing: '0.16em',
           textTransform: 'uppercase',
-          color: '#b77b35',
+          color: theme.accent,
           marginBottom: '10px',
         }}
       >
         Translating
       </div>
-      <div style={{ color: '#4b3a24' }}>正在获取释义...</div>
+      <div style={{ color: theme.sub }}>正在获取释义...</div>
     </div>
   )
 }
@@ -48,80 +49,50 @@ export function LoadedPanel({
   wordLocalInfoOuter,
   handleDeleteWord,
   mode,
-  onClose,
+  theme,
 }: {
   word: string
   dataEnd: string
   wordLocalInfoOuter?: IWordStorage
   handleDeleteWord: () => void
   mode: 'stored' | 'selection'
-  onClose?: () => void
+  theme: Theme
 }) {
   const isSelectionMode = mode === 'selection'
 
   return (
-    <div style={surfaceStyle}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: '12px',
-          marginBottom: '12px',
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: '11px',
-              fontWeight: 800,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: '#b77b35',
-              marginBottom: '6px',
-            }}
-          >
-            {isSelectionMode ? 'Selected Word' : 'Saved Word'}
-          </div>
-          <h1
-            style={{
-              margin: 0,
-              color: '#2c2015',
-              fontSize: '28px',
-              lineHeight: '1.1',
-              fontWeight: 800,
-              letterSpacing: '-0.03em',
-            }}
-          >
-            {word}
-          </h1>
-        </div>
-
-        <button
-          type='button'
-          aria-label='关闭翻译卡片'
-          onClick={onClose}
+    <div style={{ padding: surfacePadding }}>
+      <div style={{ marginBottom: '12px', paddingRight: '72px' }}>
+        <div
           style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            border: '1px solid rgba(191, 122, 41, 0.14)',
-            background: 'rgba(255, 255, 255, 0.7)',
-            color: '#8f5c1d',
-            fontSize: '18px',
-            cursor: 'pointer',
-            flexShrink: 0,
+            fontSize: '11px',
+            fontWeight: 800,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: theme.accent,
+            marginBottom: '6px',
           }}
         >
-          ×
-        </button>
+          {isSelectionMode ? 'Selected Word' : 'Saved Word'}
+        </div>
+        <h1
+          style={{
+            margin: 0,
+            color: theme.ink,
+            fontSize: '28px',
+            lineHeight: '1.1',
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {word}
+        </h1>
       </div>
 
       <div
         style={{
-          height: '1px',
-          background:
-            'linear-gradient(90deg, rgba(255,179,71,0), rgba(255,179,71,0.65), rgba(255,179,71,0))',
+          height: '0',
+          borderTop: `2px dashed ${theme.divider}`,
         }}
       />
 
@@ -129,7 +100,7 @@ export function LoadedPanel({
         className='break-words'
         style={{
           margin: '16px 0',
-          color: '#44311e',
+          color: theme.ink,
           whiteSpace: 'pre-line',
           fontSize: '15px',
         }}
@@ -144,15 +115,15 @@ export function LoadedPanel({
           justifyContent: 'space-between',
           gap: '10px',
           paddingTop: '14px',
-          borderTop: '1px solid rgba(191, 122, 41, 0.12)',
+          borderTop: `2px dashed ${theme.divider}`,
         }}
       >
         {isSelectionMode ? (
-          <span style={{ fontSize: '12px', color: '#6d5436' }}>
+          <span style={{ fontSize: '12px', color: theme.sub }}>
             已加入词库，页面中同词会保持高亮可查。
           </span>
         ) : (
-          <span style={{ color: '#6d5436', fontSize: '12px' }}>
+          <span style={{ color: theme.sub, fontSize: '12px' }}>
             查询次数:
             <span
               style={{
@@ -161,8 +132,8 @@ export function LoadedPanel({
                 minWidth: '28px',
                 textAlign: 'center',
                 borderRadius: '999px',
-                background: '#ffe6b3',
-                color: '#9b5f12',
+                background: theme.chipBg,
+                color: theme.chipText,
                 padding: '2px 8px',
                 fontWeight: 800,
               }}
@@ -176,8 +147,8 @@ export function LoadedPanel({
           <span
             style={{
               borderRadius: '999px',
-              background: '#ffe6b3',
-              color: '#9b5f12',
+              background: theme.chipBg,
+              color: theme.chipText,
               padding: '6px 12px',
               fontSize: '12px',
               fontWeight: 800,
@@ -192,8 +163,9 @@ export function LoadedPanel({
             title='删除单词（不再查询该单词）'
             style={{
               ...actionButtonStyle,
-              background: 'rgba(255, 92, 92, 0.1)',
-              color: '#c43d3d',
+              border: `2px solid ${theme.dangerText}`,
+              background: theme.dangerBg,
+              color: theme.dangerText,
             }}
           >
             移除单词
