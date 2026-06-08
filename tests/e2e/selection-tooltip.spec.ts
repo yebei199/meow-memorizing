@@ -89,6 +89,43 @@ test('selecting a word immediately highlights all existing matches', async ({
   await h.close();
 });
 
+test('selecting a word inside an existing highlight tree immediately highlights it', async ({
+  browser,
+}) => {
+  const h = await setupBundleHarness(browser, {
+    url: 'http://127.0.0.1:5199/sample.html',
+    seedWords: {
+      hello: {
+        word: 'hello',
+        isDeleted: false,
+        queryTimes: 1,
+        deleteTimes: 0,
+      },
+    },
+  });
+
+  await expect(h.page.locator('[data-word="hello"]')).toHaveCount(
+    2,
+    { timeout: 15000 },
+  );
+
+  await selectWord(h.page, 'body', 'world');
+
+  const tooltip = h.page.locator(
+    '[data-meow-tooltip-root="selection"]',
+  );
+  await expect(tooltip).toHaveCount(1, { timeout: 15000 });
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText('已加入词库');
+
+  await expect(h.page.locator('[data-word="world"]')).toHaveCount(
+    1,
+    { timeout: 15000 },
+  );
+
+  await h.close();
+});
+
 test('highlights and opens hover cards inside github-like inline links', async ({
   browser,
 }) => {
