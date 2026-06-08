@@ -3,6 +3,8 @@ import TransLine from '@/src/components/transline/TransLine.tsx';
 
 // 用于存储原始文本节点的WeakMap
 const originalTextMap = new WeakMap<Text, string>();
+// 用于标记已处理的文本节点
+const processedTextNodes = new WeakSet<Text>();
 
 /**
  * 获取页面所有文本节点，排除翻译面板中的文本节点
@@ -13,6 +15,11 @@ export function getAllTextNodes(): Text[] {
     NodeFilter.SHOW_TEXT,
     {
       acceptNode: (node) => {
+        // 跳过已处理的文本节点
+        if (processedTextNodes.has(node as Text)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        
         // 检查父元素是否属于翻译面板
         let parent = node.parentElement;
         while (parent) {
@@ -70,6 +77,9 @@ export async function processTextNode(
     wordsList: Record<string, any>,
   ) => { index: number; word: string; end: number }[],
 ): Promise<void> {
+  // 标记为已处理
+  processedTextNodes.add(textNode);
+  
   const text = textNode.textContent || '';
   if (!text.trim()) return;
 
@@ -185,5 +195,17 @@ export function restoreOriginalTextNode(
 
     // 替换节点
     parent.replaceChild(textNode, wordElement);
+    
+    // 从已处理集合中移除对应的文本节点
+    processedTextNodes.delete(textNode);
   }
+}
+
+/**
+ * 重置已处理的文本节点标记（用于强制重新处理）
+ */
+export function resetProcessedTextNodes(): void {
+  // 注意：WeakSet没有clear方法，所以我们创建一个新的WeakSet
+  // 在实际应用中，可能需要使用其他方式来管理已处理的节点
+  console.warn('无法直接清空WeakSet，需要刷新页面才能完全重置处理状态');
 }

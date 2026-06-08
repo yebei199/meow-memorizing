@@ -73,4 +73,3 @@ export async function deleteWord(word: string): Promise<void> {
 export async function delay(ms: number): Promise<void> {
   await new LiePromise((resolve) => setTimeout(resolve, ms))
 }
-

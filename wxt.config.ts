@@ -16,10 +16,13 @@ export default defineConfig({
   manifest: {
     description: '记单词的小插件',
     permissions: ['storage'],
+    homepage_url:
+      'https://github.com/yebei199/meow-memorizing',
   },
   webExt: {
     startUrls: [
-      'https://wxt.dev/get-started/migrate-to-wxt.html',
+      'https://wxt.dev/guide/introduction.html',
+      'https://github.com/trending?since=daily',
     ],
   },
 });
