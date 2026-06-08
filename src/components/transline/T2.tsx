@@ -188,8 +188,9 @@ function useTopLevelTooltip(
       // 创建tooltip根元素
       tooltipRootRef.current =
         document.createElement('div');
+      // Skip marker only; the tooltip-root marker is owned solely by
+      // HoverTooltip's own root so the attribute is not nested/duplicated.
       tooltipRootRef.current.dataset.meowIgnore = 'true';
-      tooltipRootRef.current.dataset.meowTooltipRoot = 'stored';
       tooltipRootRef.current.style.position = 'absolute';
       // 将面板定位在鼠标的正下方（居中对齐）
       tooltipRootRef.current.style.left = `${tooltipPosition.x - 150}px`; // 300px宽度的一半

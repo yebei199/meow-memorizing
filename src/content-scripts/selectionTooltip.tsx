@@ -71,8 +71,9 @@ function ensureTooltipHost(): HTMLDivElement {
 
   tooltipHost = document.createElement('div')
   tooltipHost.id = TOOLTIP_ID
+  // The skip marker lives here; the tooltip-root marker is owned solely by
+  // HoverTooltip's own root so the attribute is not nested/duplicated.
   tooltipHost.dataset.meowIgnore = 'true'
-  tooltipHost.dataset.meowTooltipRoot = 'selection'
   tooltipHost.style.position = 'fixed'
   tooltipHost.style.width = `${TOOLTIP_WIDTH}px`
   tooltipHost.style.zIndex = '2147483647'

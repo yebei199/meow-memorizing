@@ -31,10 +31,12 @@ test('shows a translation card for a selected word without nested highlight mark
     'serendipity',
   );
 
-  const tooltip = h.page
-    .locator('[data-meow-tooltip-root="selection"]')
-    .first();
-  await expect(tooltip).toBeVisible({ timeout: 15000 });
+  const tooltip = h.page.locator(
+    '[data-meow-tooltip-root="selection"]',
+  );
+  // Exactly one tooltip root — no nested/duplicated marker.
+  await expect(tooltip).toHaveCount(1, { timeout: 15000 });
+  await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('serendipity');
   await expect(tooltip).toContainText('lucky discovery');
   await expect(tooltip).toContainText('已加入词库');
@@ -68,10 +70,11 @@ test('selecting a word immediately highlights all existing matches', async ({
   await h.page.waitForTimeout(STARTUP_MS);
   await selectWord(h.page, 'body', 'hello');
 
-  const tooltip = h.page
-    .locator('[data-meow-tooltip-root="selection"]')
-    .first();
-  await expect(tooltip).toBeVisible({ timeout: 15000 });
+  const tooltip = h.page.locator(
+    '[data-meow-tooltip-root="selection"]',
+  );
+  await expect(tooltip).toHaveCount(1, { timeout: 15000 });
+  await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('已加入词库');
   await expect(
     tooltip.getByRole('button', { name: '加入词库' }),
@@ -114,10 +117,11 @@ test('highlights and opens hover cards inside github-like inline links', async (
     .first();
   await trigger.hover();
 
-  const tooltip = h.page
-    .locator('[data-meow-tooltip-root="stored"]')
-    .first();
-  await expect(tooltip).toBeVisible({ timeout: 15000 });
+  const tooltip = h.page.locator(
+    '[data-meow-tooltip-root="stored"]',
+  );
+  await expect(tooltip).toHaveCount(1, { timeout: 15000 });
+  await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('reddit');
   await expect(tooltip).toContainText('lucky discovery');
 
