@@ -1,7 +1,6 @@
 import LiePromise from 'lie'
 import { addWordLocal, queryWord } from './storageManager'
 import type { IWordStorage } from './types'
-import { restoreOriginalTextNode } from '@/src/content-scripts/domUtils'
 
 /**
  * 过滤单词是否有效
@@ -61,9 +60,8 @@ export async function deleteWord(word: string): Promise<void> {
       deleteTimes: existingWord.deleteTimes + 1,
     }
     await addWordLocal(updatedWordInfo)
-    
-    // 立即恢复页面中所有该单词到原始状态
-    restoreOriginalTextNode(document.body, cleanWord);
+
+    // 页面中所有该单词的高亮由 T2 监听 deleteWord 事件自行恢复（见 HoverTooltip）。
   }
 }
 
@@ -73,4 +71,3 @@ export async function deleteWord(word: string): Promise<void> {
 export async function delay(ms: number): Promise<void> {
   await new LiePromise((resolve) => setTimeout(resolve, ms))
 }
-

@@ -1,0 +1,24 @@
+# Repo-local cargo configuration.
+#
+# Self-contained so the workspace builds on any machine, independent of the
+# host's `~/.cargo/config.toml`. sccache/mold/clang are host-local speedups
+# (present on the NixOS dev host); drop the relevant lines on machines that
+# lack them. Registry mirror matches the local NixOS setup (tuna) for fast
+# index fetches. Unlike the Bevy-based reference project, this workspace has
+# no getrandom dependency, so no wasm32 getrandom backend flag is needed.
+
+[build]
+rustc-wrapper = "sccache"
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+[registries]
+tuna = { index = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git" }
+
+[registry]
+default = "tuna"
+
+[net]
+git-fetch-with-cli = true

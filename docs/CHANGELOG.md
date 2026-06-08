@@ -1,3 +1,16 @@
+# 1.0.0
+
+## Highlights
+
+- Switch the core page-scan path to a Rust + WASM Aho-Corasick matcher with no
+  JavaScript fallback.
+- Move matching off the main thread where needed and harden the extension
+  against strict page CSP.
+- Add selection translation cards, unify tooltip behavior, and improve tooltip
+  rendering performance on dense pages.
+- Cover the new hot path with Playwright e2e and performance-oriented matcher
+  benchmarks.
+
 # 0.1.9
 
 ## 修复

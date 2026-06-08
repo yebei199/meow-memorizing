@@ -1,0 +1,6 @@
+# See https://rust-lang.github.io/rust-clippy/ for options.
+warn-on-all-wildcard-imports = true
+too-many-arguments-threshold = 7
+too-large-for-stack = 100
+max-fn-params-bools = 4
+cognitive-complexity-threshold = 28

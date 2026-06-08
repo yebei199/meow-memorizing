@@ -4,6 +4,10 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
   vite: () => ({
+    // wasm-bindgen generated JS uses `new URL('matcher_bg.wasm',
+    // import.meta.url)`. Without this, Vite doesn't recognise .wasm and
+    // hangs during dev "Preparing..." while trying to resolve the asset.
+    assetsInclude: ['**/*.wasm'],
     ssr: {
       noExternal: [
         '@webext-core/storage',
@@ -16,10 +20,15 @@ export default defineConfig({
   manifest: {
     description: '记单词的小插件',
     permissions: ['storage'],
+    homepage_url:
+      'https://github.com/yebei199/meow-memorizing',
   },
   webExt: {
     startUrls: [
-      'https://wxt.dev/get-started/migrate-to-wxt.html',
+      'https://wxt.dev/guide/introduction.html',
+      'https://github.com/trending?since=daily',
     ],
+    // NixOS: Chrome requires --no-sandbox in a sandboxed environment.
+    chromiumArgs: ['--no-sandbox'],
   },
 });

@@ -1,99 +1,177 @@
-import type { IWordStorage } from '@/src/core/types';
+import type React from 'react'
+import type { IWordStorage } from '@/src/core/types'
+import { HAND_FONT, type Theme } from './tooltipTheme'
 
-// 加载中面板组件
-export function LoadingPanel() {
-  return (
-    <div style={{ textAlign: 'center', padding: '20px' }}>
-      加载中...
-    </div>
-  );
+const surfacePadding = '20px 20px 18px'
+
+const actionButtonStyle: React.CSSProperties = {
+  borderRadius: '999px',
+  padding: '8px 14px',
+  fontSize: '12px',
+  fontWeight: 700,
+  cursor: 'pointer',
+  fontFamily: HAND_FONT,
 }
 
-// 已加载面板组件
+/**
+ * Loading state for the translation card.
+ */
+export function LoadingPanel({ theme }: { theme: Theme }) {
+  return (
+    <div
+      style={{
+        padding: '30px 22px',
+        textAlign: 'center',
+      }}
+    >
+      <div
+        style={{
+          fontSize: '12px',
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+          color: theme.accent,
+          marginBottom: '10px',
+        }}
+      >
+        Translating
+      </div>
+      <div style={{ color: theme.sub }}>正在获取释义...</div>
+    </div>
+  )
+}
+
+/**
+ * Resolved state for the translation card.
+ */
 export function LoadedPanel({
   word,
   dataEnd,
   wordLocalInfoOuter,
-  handleAddQuery,
   handleDeleteWord,
+  mode,
+  theme,
 }: {
-  word: string;
-  dataEnd: string;
-  wordLocalInfoOuter?: IWordStorage;
-  handleAddQuery: () => void;
-  handleDeleteWord: () => void;
+  word: string
+  dataEnd: string
+  wordLocalInfoOuter?: IWordStorage
+  handleDeleteWord: () => void
+  mode: 'stored' | 'selection'
+  theme: Theme
 }) {
+  const isSelectionMode = mode === 'selection'
+
   return (
-    <div style={{ position: 'relative' }}>
-      {/* 删除按钮 - 红色X在右上角 */}
-      <button
-        type='button'
-        onClick={handleDeleteWord}
-        title='删除单词（不再查询该单词）'
-        style={{
-          position: 'absolute',
-          top: '0',
-          right: '0',
-          width: '24px',
-          height: '24px',
-          backgroundColor: 'transparent',
-          border: 'none',
-          color: '#ff4444',
-          fontSize: '18px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000,
-          borderRadius: '50%',
-          transition: 'background-color 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor =
-            'rgba(255, 0, 0, 0.1)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor =
-            'transparent';
-        }}
-      >
-        ×
-      </button>
+    <div style={{ padding: surfacePadding }}>
+      <div style={{ marginBottom: '12px', paddingRight: '72px' }}>
+        <div
+          style={{
+            fontSize: '11px',
+            fontWeight: 800,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: theme.accent,
+            marginBottom: '6px',
+          }}
+        >
+          {isSelectionMode ? 'Selected Word' : 'Saved Word'}
+        </div>
+        <h1
+          style={{
+            margin: 0,
+            color: theme.ink,
+            fontSize: '28px',
+            lineHeight: '1.1',
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {word}
+        </h1>
+      </div>
 
-      <h1
-        className={'text-center text-xl font-bold mb-3'}
+      <div
         style={{
-          color: 'inherit',
-          fontFamily: 'inherit',
-          textShadow: '0 1px 1px rgba(255, 255, 255, 0.3)',
-          paddingRight: '24px', // 为右上角的X按钮留出空间
+          height: '0',
+          borderTop: `2px dashed ${theme.divider}`,
         }}
-      >
-        {word}
-      </h1>
+      />
 
-      <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
       <p
-        className={'break-words my-4'}
+        className='break-words'
         style={{
-          color: 'inherit',
-          fontFamily: 'inherit',
+          margin: '16px 0',
+          color: theme.ink,
           whiteSpace: 'pre-line',
+          fontSize: '15px',
         }}
       >
         {dataEnd}
       </p>
 
-      <hr className='border-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-30' />
-      <span className='flex justify-between items-center'>
-        <span style={{ color: 'inherit' }}>
-          查询次数:
-          <span className='inline break-words ml-2 font-semibold'>
-            {wordLocalInfoOuter?.queryTimes}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '10px',
+          paddingTop: '14px',
+          borderTop: `2px dashed ${theme.divider}`,
+        }}
+      >
+        {isSelectionMode ? (
+          <span style={{ fontSize: '12px', color: theme.sub }}>
+            已加入词库，页面中同词会保持高亮可查。
           </span>
-        </span>
-      </span>
+        ) : (
+          <span style={{ color: theme.sub, fontSize: '12px' }}>
+            查询次数:
+            <span
+              style={{
+                marginLeft: '8px',
+                display: 'inline-block',
+                minWidth: '28px',
+                textAlign: 'center',
+                borderRadius: '999px',
+                background: theme.chipBg,
+                color: theme.chipText,
+                padding: '2px 8px',
+                fontWeight: 800,
+              }}
+            >
+              {wordLocalInfoOuter?.queryTimes ?? 0}
+            </span>
+          </span>
+        )}
+
+        {isSelectionMode ? (
+          <span
+            style={{
+              borderRadius: '999px',
+              background: theme.chipBg,
+              color: theme.chipText,
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: 800,
+            }}
+          >
+            已加入词库
+          </span>
+        ) : (
+          <button
+            type='button'
+            onClick={handleDeleteWord}
+            title='删除单词（不再查询该单词）'
+            style={{
+              ...actionButtonStyle,
+              border: `2px solid ${theme.dangerText}`,
+              background: theme.dangerBg,
+              color: theme.dangerText,
+            }}
+          >
+            移除单词
+          </button>
+        )}
+      </div>
     </div>
-  );
+  )
 }

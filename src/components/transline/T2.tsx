@@ -2,37 +2,28 @@ import type React from 'react';
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 import { queryWord } from '@/src/core/storageManager';
-import HoverTooltip from './HoverTooltip';
+import {
+  dismissTooltip,
+  showTooltip,
+} from '@/src/content-scripts/tooltipManager';
 
 interface WordHighlighterProps {
   originalWord: string;
   lowerCaseWord: string;
 }
 
-function WordHighlighter({
-  originalWord,
-  lowerCaseWord,
-}: WordHighlighterProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [, setTooltipPosition] = useState<{
-    x: number;
-    y: number;
-  }>({ x: 0, y: 0 });
-  const [hasTriggered, setHasTriggered] = useState(false);
+// 拆分出的自定义Hook：处理单词状态检查
+function useWordStatus(lowerCaseWord: string) {
   const [isDeleted, setIsDeleted] = useState(false);
-  const timeoutId = useRef<number | null>(null);
-  const hoverTimeoutId = useRef<number | null>(null);
 
-  // 检查单词是否已被删除
   useEffect(() => {
     const checkWordStatus = async () => {
       const wordInfo = await queryWord(lowerCaseWord);
-      if (wordInfo && wordInfo.isDeleted) {
+      if (wordInfo?.isDeleted) {
         setIsDeleted(true);
       }
     };
@@ -40,7 +31,22 @@ function WordHighlighter({
     checkWordStatus();
   }, [lowerCaseWord]);
 
-  // 监听删除事件
+  return { isDeleted, setIsDeleted };
+}
+
+// 拆分出的自定义Hook：处理删除事件监听
+function useDeleteEventListener(
+  lowerCaseWord: string,
+  setIsDeleted: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+  setIsHovered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+  setHasTriggered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+) {
   useEffect(() => {
     const handleDelete = (event: CustomEvent) => {
       if (event.detail === lowerCaseWord) {
@@ -61,54 +67,64 @@ function WordHighlighter({
         handleDelete as EventListener,
       );
     };
-  }, [lowerCaseWord]);
+  }, [
+    lowerCaseWord,
+    setIsDeleted,
+    setIsHovered,
+    setHasTriggered,
+  ]);
+}
 
-  const handleMouseEnter = useCallback(
-    (
-      event: React.MouseEvent<
-        HTMLButtonElement,
-        MouseEvent
-      >,
-    ): void => {
-      // 如果单词已被删除，则不显示tooltip
-      if (isDeleted) return;
+// 拆分出的自定义Hook：处理鼠标事件
+function useMouseEvents(
+  isDeleted: boolean,
+  hasTriggered: boolean,
+  setIsHovered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+  setHasTriggered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+  isPanelHovered: React.MutableRefObject<boolean>,
+) {
+  const timeoutId = useRef<number | null>(null);
+  const hoverTimeoutId = useRef<number | null>(null);
 
-      if (!hasTriggered) {
-        setTooltipPosition({
-          x: event.pageX,
-          y: event.pageY,
-        });
+  const handleMouseEnter = useCallback((): void => {
+    // 如果单词已被删除，则不显示tooltip
+    if (isDeleted) return;
 
-        hoverTimeoutId.current = window.setTimeout(() => {
-          setIsHovered(true);
-          setHasTriggered(true);
-        }, 300);
-      }
+    if (!hasTriggered) {
+      hoverTimeoutId.current = window.setTimeout(() => {
+        setIsHovered(true);
+        setHasTriggered(true);
+      }, 300);
+    }
 
-      if (timeoutId.current) {
-        clearTimeout(timeoutId.current);
-      }
-    },
-    [hasTriggered, isDeleted],
-  );
+    // 清除隐藏面板的定时器
+    if (timeoutId.current) {
+      clearTimeout(timeoutId.current);
+      timeoutId.current = null;
+    }
+  }, [hasTriggered, isDeleted, setIsHovered, setHasTriggered]);
 
   const handleMouseLeave = useCallback(() => {
     if (hoverTimeoutId.current) {
       clearTimeout(hoverTimeoutId.current);
+      hoverTimeoutId.current = null;
     }
 
+    // 设置延迟隐藏面板，但允许面板上的鼠标事件取消隐藏
     timeoutId.current = window.setTimeout(() => {
-      setIsHovered(false);
-      setHasTriggered(false);
+      // 只有当鼠标不在面板上时才隐藏
+      if (!isPanelHovered.current) {
+        setIsHovered(false);
+        setHasTriggered(false);
+      }
     }, 300);
-  }, []);
+  }, [setIsHovered, setHasTriggered, isPanelHovered]);
 
-  const tooltipComponent = useMemo(() => {
-    return isHovered ? (
-      <HoverTooltip word={lowerCaseWord} />
-    ) : null;
-  }, [isHovered, lowerCaseWord]);
-
+  // 清理定时器
   useEffect(() => {
     return () => {
       if (timeoutId.current) {
@@ -120,6 +136,116 @@ function WordHighlighter({
     };
   }, []);
 
+  return { handleMouseEnter, handleMouseLeave };
+}
+
+// 拆分出的自定义Hook：通过全局单例管理器显示/隐藏tooltip。
+// 面板锚定到单词元素本身，滚动时跟随；任意时刻全局只有一个tooltip。
+function useTopLevelTooltip(
+  isHovered: boolean,
+  lowerCaseWord: string,
+  anchorRef: React.RefObject<HTMLButtonElement | null>,
+  setIsHovered: React.Dispatch<React.SetStateAction<boolean>>,
+  setHasTriggered: React.Dispatch<React.SetStateAction<boolean>>,
+) {
+  const isPanelHovered = useRef(false);
+  const hideTimeoutRef = useRef<number | null>(null);
+  const tokenRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isHovered) {
+      if (tokenRef.current !== null) {
+        dismissTooltip(tokenRef.current);
+        tokenRef.current = null;
+      }
+      return;
+    }
+
+    const reset = () => {
+      setIsHovered(false);
+      setHasTriggered(false);
+    };
+
+    tokenRef.current = showTooltip({
+      word: lowerCaseWord,
+      mode: 'stored',
+      follow: true,
+      anchorRect: () =>
+        anchorRef.current?.getBoundingClientRect() ?? null,
+      onDismiss: reset,
+      onHostPointerEnter: () => {
+        isPanelHovered.current = true;
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+          hideTimeoutRef.current = null;
+        }
+      },
+      onHostPointerLeave: () => {
+        isPanelHovered.current = false;
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+        }
+        // 延迟隐藏，给用户时间把鼠标移回单词上
+        hideTimeoutRef.current = window.setTimeout(() => {
+          if (!isPanelHovered.current) reset();
+        }, 300);
+      },
+    });
+
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+      if (tokenRef.current !== null) {
+        dismissTooltip(tokenRef.current);
+        tokenRef.current = null;
+      }
+    };
+  }, [
+    isHovered,
+    lowerCaseWord,
+    anchorRef,
+    setIsHovered,
+    setHasTriggered,
+  ]);
+
+  return { isPanelHovered };
+}
+
+function WordHighlighter({
+  originalWord,
+  lowerCaseWord,
+}: WordHighlighterProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [hasTriggered, setHasTriggered] = useState(false);
+  const anchorRef = useRef<HTMLButtonElement>(null);
+
+  // 使用拆分后的自定义Hook
+  const { isDeleted, setIsDeleted } =
+    useWordStatus(lowerCaseWord);
+  useDeleteEventListener(
+    lowerCaseWord,
+    setIsDeleted,
+    setIsHovered,
+    setHasTriggered,
+  );
+  const { isPanelHovered } = useTopLevelTooltip(
+    isHovered,
+    lowerCaseWord,
+    anchorRef,
+    setIsHovered,
+    setHasTriggered,
+  );
+  const { handleMouseEnter, handleMouseLeave } =
+    useMouseEvents(
+      isDeleted,
+      hasTriggered,
+      setIsHovered,
+      setHasTriggered,
+      isPanelHovered,
+    );
+
   // 如果单词已被删除，渲染原始文本而不是带下划线的单词
   if (isDeleted) {
     return <span>{originalWord}</span>;
@@ -127,6 +253,9 @@ function WordHighlighter({
 
   return (
     <button
+      ref={anchorRef}
+      data-meow-word-trigger='true'
+      data-word={lowerCaseWord}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -164,7 +293,6 @@ function WordHighlighter({
           }}
         />
       </span>
-      {tooltipComponent}
     </button>
   );
 }

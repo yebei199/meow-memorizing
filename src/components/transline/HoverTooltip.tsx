@@ -3,100 +3,122 @@ import {
   useEffect,
   useMemo,
   useState,
-} from 'react';
+} from 'react'
 import {
   addWordLocal,
-  queryWord,
-} from '@/src/core/storageManager';
-import type { IWordStorage } from '@/src/core/types';
+} from '@/src/core/storageManager'
+import type { IWordStorage } from '@/src/core/types'
 import {
-  addQueriedWord,
   deleteWord,
-} from '@/src/core/wordProcessor';
+} from '@/src/core/wordProcessor'
 import {
   LoadedPanel,
   LoadingPanel,
-} from './PanelComponents';
+} from './PanelComponents'
+import {
+  HAND_FONT,
+  SKETCH_RADIUS,
+  type ThemeName,
+  THEMES,
+} from './tooltipTheme'
 import {
   CACHE_EXPIRY,
   fetchData,
   translationCache,
-} from './transUtils';
+} from './transUtils'
+import { processPageWords } from '@/src/content-scripts/ergodicWords'
+
+interface HoverTooltipProps {
+  word: string
+  mode?: 'stored' | 'selection'
+  onClose?: () => void
+  style?: React.CSSProperties
+}
+
+function fetchWordData(
+  word: string,
+  mode: 'stored' | 'selection',
+  setDataEnd: (data: string) => void,
+  setLoading: (loading: boolean) => void,
+  setWordLocalInfoOuter: (
+    info: IWordStorage | undefined,
+  ) => void,
+): void {
+  fetchData(
+    word,
+    setDataEnd,
+    setLoading,
+    setWordLocalInfoOuter,
+    addWordLocal,
+    deleteWord,
+    translationCache,
+    CACHE_EXPIRY,
+    mode,
+  ).catch(console.error)
+}
+
+function useWordDelete(
+  wordLocalInfoOuter: IWordStorage | undefined,
+  onClose?: () => void,
+) {
+  return useCallback(async () => {
+    if (!wordLocalInfoOuter) {
+      return
+    }
+
+    onClose?.()
+
+    const event = new CustomEvent('deleteWord', {
+      detail: wordLocalInfoOuter.word,
+    })
+    window.dispatchEvent(event)
+
+    setTimeout(async () => {
+      await deleteWord(wordLocalInfoOuter.word)
+      await processPageWords()
+    }, 10)
+  }, [onClose, wordLocalInfoOuter])
+}
 
 /**
- * @description 鼠标悬停时显示额外内容
- * 逻辑是先发送消息到后台,然后后台返回html片段,最后将html片段渲染出来
- * @param word 单词
- * @example <HoverTooltip word={'hello'} />
+ * Render a translation card for a saved or transient selection word.
  */
 export default function HoverTooltip({
   word,
-}: {
-  word: string;
-  style?: {
-    position: string;
-    top: string;
-    left: string;
-    transform: string;
-    marginTop: string;
-    zIndex: number;
-  };
-}) {
-  const word3 = word;
+  mode = 'stored',
+  onClose,
+  style,
+}: HoverTooltipProps) {
   const [wordLocalInfoOuter, setWordLocalInfoOuter] =
-    useState<IWordStorage>();
-  const [dataEnd, setDataEnd] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const handleDeleteWord = useCallback(async () => {
-    if (wordLocalInfoOuter) {
-      // 先隐藏面板，然后再删除单词
-      const event = new CustomEvent('deleteWord', {
-        detail: wordLocalInfoOuter.word,
-      });
-      window.dispatchEvent(event);
-
-      // 延迟一小段时间确保面板被卸载后再删除单词
-      setTimeout(async () => {
-        await deleteWord(wordLocalInfoOuter.word);
-        // deleteWord函数内部已经调用了restoreOriginalTextNode来恢复单词为原始状态
-        // 不需要再调用processPageWords
-      }, 10);
-    }
-  }, [wordLocalInfoOuter]);
-
-  const handleAddQuery = useCallback(async () => {
-    if (wordLocalInfoOuter) {
-      await addQueriedWord(wordLocalInfoOuter.word);
-      const updatedWordInfo = await queryWord(
-        wordLocalInfoOuter.word,
-      );
-      if (updatedWordInfo) {
-        setWordLocalInfoOuter(updatedWordInfo);
-      }
-    }
-  }, [wordLocalInfoOuter]);
+    useState<IWordStorage>()
+  const [dataEnd, setDataEnd] = useState('')
+  const [loading, setLoading] = useState(true)
+  // Hand-drawn card defaults to dark mode; the top-right toggle flips it.
+  const [themeName, setThemeName] = useState<ThemeName>('dark')
+  const theme = THEMES[themeName]
 
   useEffect(() => {
-    fetchData(
-      word3,
+    fetchWordData(
+      word,
+      mode,
       setDataEnd,
       setLoading,
       setWordLocalInfoOuter,
-      addWordLocal,
-      deleteWord,
-      () => Promise.resolve(), // 不再需要处理页面单词
-      translationCache,
-      CACHE_EXPIRY,
-    ).catch(console.error);
+    )
+  }, [mode, word])
 
-    return () => {};
-  }, [word3]);
+  const handleDeleteWord = useWordDelete(
+    wordLocalInfoOuter,
+    onClose,
+  )
 
-  // 面板内容组件
+  const toggleTheme = useCallback(() => {
+    setThemeName((prev) => (prev === 'dark' ? 'light' : 'dark'))
+  }, [])
+
   const panelContent = useMemo(() => {
     if (loading) {
-      return <LoadingPanel />;
+      return <LoadingPanel theme={theme} />
     }
 
     return (
@@ -104,66 +126,91 @@ export default function HoverTooltip({
         word={word}
         dataEnd={dataEnd}
         wordLocalInfoOuter={wordLocalInfoOuter}
-        handleAddQuery={handleAddQuery}
         handleDeleteWord={handleDeleteWord}
+        mode={mode}
+        theme={theme}
       />
-    );
+    )
   }, [
-    loading,
-    word,
     dataEnd,
-    wordLocalInfoOuter,
-    handleAddQuery,
     handleDeleteWord,
-  ]);
+    loading,
+    mode,
+    theme,
+    word,
+    wordLocalInfoOuter,
+  ])
 
-  // 监听删除事件，隐藏面板
-  useEffect(() => {
-    const handleDelete = (event: CustomEvent) => {
-      if (event.detail === word) {
-        // 隐藏面板的逻辑可以在这里添加
-      }
-    };
-
-    window.addEventListener(
-      'deleteWord',
-      handleDelete as EventListener,
-    );
-    return () => {
-      window.removeEventListener(
-        'deleteWord',
-        handleDelete as EventListener,
-      );
-    };
-  }, [word]);
+  const toolbarButtonStyle: React.CSSProperties = {
+    width: '30px',
+    height: '30px',
+    borderRadius: '50%',
+    border: `2px solid ${theme.ink}`,
+    background: theme.toolbarBg,
+    color: theme.ink,
+    fontSize: '15px',
+    lineHeight: 1,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+  }
 
   return (
     <div
-      className={
-        'position-absolute overflow-auto z-99 rounded-2xl p-6'
-      }
+      data-meow-ignore='true'
+      data-meow-tooltip-root={mode}
+      className='overflow-hidden'
       style={{
-        position: 'absolute',
-        left: '50%',
-        top: '100%',
-        background: 'rgba(255, 255, 255, 0.01)',
-        backdropFilter: 'blur(30px)',
-        WebkitBackdropFilter: 'blur(30px)',
-        borderRadius: '18px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-        border: '1px solid rgba(255, 255, 255, 0.7)',
-        width: '300px', // 固定宽度为300px
-        minWidth: '300px',
-        maxWidth: '300px',
-        fontFamily: 'Arial, sans-serif',
+        position: 'relative',
+        background: theme.surface,
+        border: `2.5px solid ${theme.border}`,
+        borderRadius: SKETCH_RADIUS,
+        boxShadow: theme.shadow,
+        width: '340px',
+        minWidth: '340px',
+        maxWidth: '340px',
+        fontFamily: HAND_FONT,
         fontSize: '14px',
-        lineHeight: '1.4',
+        lineHeight: '1.55',
+        color: theme.ink,
         zIndex: 9999,
-        transform: 'translateX(-50%)', // 居中对齐
-        marginTop: '5px', // 单词下方5px的间距
+        transform: 'rotate(-0.5deg)',
+        ...style,
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          top: '12px',
+          right: '12px',
+          display: 'flex',
+          gap: '8px',
+          zIndex: 1,
+        }}
+      >
+        <button
+          type='button'
+          aria-label={
+            themeName === 'dark' ? '切换到亮色' : '切换到暗色'
+          }
+          title={themeName === 'dark' ? '切换到亮色' : '切换到暗色'}
+          onClick={toggleTheme}
+          style={toolbarButtonStyle}
+        >
+          {themeName === 'dark' ? '🌙' : '☀️'}
+        </button>
+        <button
+          type='button'
+          aria-label='关闭翻译卡片'
+          onClick={onClose}
+          style={{ ...toolbarButtonStyle, fontSize: '18px' }}
+        >
+          ×
+        </button>
+      </div>
       {panelContent}
     </div>
-  );
+  )
 }

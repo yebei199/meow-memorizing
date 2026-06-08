@@ -1,39 +1,52 @@
-import { processPageWords } from './ergodicWords';
-import { addQueriedWord, filterWord } from '@/src/core/wordProcessor';
+import { addQueriedWord } from '@/src/core/wordProcessor'
+import { processPageWords } from './ergodicWords'
+import { showSelectionTooltip } from './selectionTooltip'
+
+const VALID_SELECTION_PATTERN = /^[a-zA-Z-]+$/
+
+function normalizeSelectedWord(text: string): string | null {
+  const trimmed = text.trim()
+  if (trimmed.length <= 2) {
+    return null
+  }
+
+  if (!VALID_SELECTION_PATTERN.test(trimmed)) {
+    return null
+  }
+
+  return trimmed.toLowerCase()
+}
 
 /**
- * 监听鼠标抬起事件，选择文本并添加到本地存储
+ * Listen for completed text selections and show a transient translation card.
  */
 export async function setupSelectionListener(): Promise<void> {
-  document.addEventListener('mouseup', async () => {
-    // 获取当前选中的文本
+  document.addEventListener('mouseup', async (event) => {
+    const target = event.target
+    if (
+      target instanceof Element &&
+      target.closest('[data-meow-ignore="true"]')
+    ) {
+      return
+    }
+
     const selection = window.getSelection()
     if (!selection || selection.rangeCount < 1) return
 
     const range = selection.getRangeAt(0)
-    const selectedText = range.toString().trim()
-    
-    // 如果选中的文本不是有效单词，返回
-    if (await filterWord(selectedText)) return
+    const word = normalizeSelectedWord(range.toString())
+    if (!word) return
 
-    const mySpan: HTMLSpanElement = document.createElement('p')
-    mySpan.textContent = selectedText
-    mySpan.style.display = 'inline'
-    mySpan.style.verticalAlign = 'baseline'
-    mySpan.style.margin = '0'
-    mySpan.style.padding = '0'
-    mySpan.style.border = 'none'
-    mySpan.style.background = 'none'
-    mySpan.style.color = 'inherit'
-    mySpan.style.font = 'inherit'
-    
-    // 使用deleteContents方法清空原范围的内容，并用<p>替换
-    range.deleteContents()
-    range.insertNode(mySpan)
-
-    // 添加单词到本地存储并更新查询次数
-    await addQueriedWord(selectedText.toLowerCase())
+    const rect = range.getBoundingClientRect()
     selection.removeAllRanges()
+
+    await addQueriedWord(word)
     await processPageWords()
+
+    showSelectionTooltip({
+      word,
+      x: rect.left + rect.width / 2,
+      y: rect.bottom,
+    })
   })
 }
