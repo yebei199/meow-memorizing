@@ -1,8 +1,13 @@
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import HighlightedText from '@/src/components/transline/HighlightedText.tsx';
 
 // 用于标记已处理的文本节点
 let processedTextNodes = new WeakSet<Text>();
+const wrappedTextNodes = new Set<{
+  wrapper: HTMLSpanElement;
+  root: Root;
+  text: string;
+}>();
 // Marks a span that wraps one text node's React-managed highlight tree. Its
 // subtree must be skipped on rescans (it is owned by React), but unlike
 // data-meow-ignore it stays selectable so users can still query words inside it.
@@ -129,6 +134,7 @@ export async function processTextNode(
   parent.replaceChild(wrapper, textNode);
 
   const root = createRoot(wrapper);
+  wrappedTextNodes.add({ wrapper, root, text });
   root.render(HighlightedText({ text, matches }));
 }
 
@@ -136,5 +142,17 @@ export async function processTextNode(
  * 重置已处理的文本节点标记（用于强制重新处理）
  */
 export function resetProcessedTextNodes(): void {
+  for (const wrapped of wrappedTextNodes) {
+    const parent = wrapped.wrapper.parentNode;
+    if (!parent) continue;
+
+    wrapped.root.unmount();
+    parent.replaceChild(
+      document.createTextNode(wrapped.text),
+      wrapped.wrapper,
+    );
+  }
+
+  wrappedTextNodes.clear();
   processedTextNodes = new WeakSet<Text>();
 }
