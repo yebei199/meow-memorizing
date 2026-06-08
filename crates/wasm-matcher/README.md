@@ -8,8 +8,8 @@ WebAssembly backend for the page word scanner. Replaces the JS
 - Build and cache two Aho-Corasick automata (active + deleted word lists)
   keyed by the current word set, rebuilt only when the set changes.
 - Scan a text node's string once, applying ASCII word-boundary checks and
-  returning matches as `{ index, word, end }` to mirror the legacy JS
-  contract in `src/content-scripts/wordMatcher.ts`.
+  returning matches as `{ index, word, end }`, the contract the JS caller in
+  `src/content-scripts/matcherFacade.ts` consumes.
 
 DOM traversal and rendering stay in JS; this crate is pure text computation.
 

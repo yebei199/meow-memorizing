@@ -1,3 +1,3 @@
 export * from './textProcessor';
-export * from './wordMatcher';
+export * from './matcherFacade';
 export * from './domUtils';

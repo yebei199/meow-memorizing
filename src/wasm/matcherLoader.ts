@@ -2,9 +2,9 @@
 //
 // The .wasm is base64-embedded (matcher-inline) so initSync needs no fetch —
 // content scripts cannot rely on fetching extension resources. Initialised
-// once and cached; on any failure we return null and the caller falls back to
-// the JS implementation. Generated glue under ./generated is produced by
-// `bun run wasm`.
+// once and cached. There is no JS fallback: a browser without WASM support is
+// unsupported by design, so init failure throws and the feature is off.
+// Generated glue under ./generated is produced by `bun run wasm`.
 import {
   find_deleted_matches,
   find_matches,
@@ -27,30 +27,22 @@ export interface WasmMatcher {
   findDeletedMatches(text: string): WasmMatch[]
 }
 
-// undefined = not tried yet; null = init failed (use JS fallback).
-let cached: WasmMatcher | null | undefined
+let cached: WasmMatcher | undefined
 
 /**
- * Initialise the wasm matcher once and return it, or null if unavailable.
- * Safe to call on every match; subsequent calls hit the cache.
+ * Initialise the wasm matcher once and return it. Throws if WASM is
+ * unavailable — there is no JS fallback. Safe to call on every match;
+ * subsequent calls hit the cache.
  */
-export function ensureMatcher(): WasmMatcher | null {
+export function ensureMatcher(): WasmMatcher {
   if (cached !== undefined) return cached
-  try {
-    initSync({ module: wasmBytes })
-    cached = {
-      setWords: (active, deleted) => set_words(active, deleted),
-      findMatches: (text) =>
-        find_matches(text) as WasmMatch[],
-      findDeletedMatches: (text) =>
-        find_deleted_matches(text) as WasmMatch[],
-    }
-  } catch (error) {
-    console.warn(
-      '[meow] WASM matcher init failed, using JS fallback:',
-      error,
-    )
-    cached = null
+  initSync({ module: wasmBytes })
+  cached = {
+    setWords: (active, deleted) => set_words(active, deleted),
+    findMatches: (text) =>
+      find_matches(text) as WasmMatch[],
+    findDeletedMatches: (text) =>
+      find_deleted_matches(text) as WasmMatch[],
   }
   return cached
 }

@@ -1,9 +1,9 @@
 // Equivalence + performance guard for the WASM matcher.
 //
-// Imports the real wasm-bindgen module over http and runs it against a
-// faithful in-page port of the legacy wordMatcher semantics on a large input.
-// Asserts the two produce identical matches (the correctness contract) and
-// records both timings (the reason the refactor exists). No hard perf
+// Imports the real wasm-bindgen module over http and runs it against an
+// independent in-page JS oracle (correct leftmost-longest scan) on a large
+// input. Asserts the two produce identical matches (the correctness contract)
+// and records both timings (the reason the refactor exists). No hard perf
 // assertion, to stay non-flaky.
 import { expect, test } from '@playwright/test'
 
@@ -47,11 +47,10 @@ test('wasm matches equal the JS reference', async ({ page }) => {
       const wasm = mod.find_matches(text)
       const w1 = performance.now()
 
-      // Correct JS oracle mirroring aho-corasick leftmost-longest +
-      // non-overlapping find_iter, then the ASCII boundary filter. (The
-      // legacy wordMatcher greedily indexOf'd the longest word first and
-      // skipped closer matches; the WASM backend fixes that, so the oracle
-      // must be the correct algorithm, not the legacy one.)
+      // Independent JS oracle mirroring aho-corasick leftmost-longest +
+      // non-overlapping find_iter, then the ASCII boundary filter. Kept as a
+      // correct reference algorithm to guard the WASM output, not a port of
+      // any prior implementation.
       function jsFind(
         text: string,
         words: string[],

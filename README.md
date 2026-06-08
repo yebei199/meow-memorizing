@@ -37,8 +37,8 @@ bun run build
 (`crates/wasm-matcher`)，用 Aho-Corasick 自动机一次扫描全部命中，
 替代原先 `O(文本 × 单词数)` 的 `indexOf` 嵌套循环，匹配性能与单词表
 规模无关 (大词表下实测约 22×)。自动机按单词表缓存复用；WASM 以 base64
-内联进 content script，加载失败自动回退到 JS 实现。详见
-`crates/wasm-matcher/README.md` 与 `src/wasm/README.md`。
+内联进 content script。无 JS 兜底：不支持 WASM 的浏览器即不支持本插件。
+详见 `crates/wasm-matcher/README.md` 与 `src/wasm/README.md`。
 
 构建会自动先生成 WASM (`bun run wasm`)，需要 `wasm32-unknown-unknown`
 目标与匹配版本的 `wasm-bindgen-cli`。

@@ -2,10 +2,9 @@
 //!
 //! Replaces the legacy `O(text × words)` `indexOf` loop with a single-pass
 //! automaton scan. Two automata (active + deleted word lists) are cached and
-//! rebuilt only when the word set changes. Match semantics mirror
-//! `src/content-scripts/wordMatcher.ts`: leftmost-longest, non-overlapping,
-//! ASCII case-insensitive, both flanks non-`[a-zA-Z]`, returned `word`
-//! preserves source casing.
+//! rebuilt only when the word set changes. Match semantics: leftmost-longest,
+//! non-overlapping, ASCII case-insensitive, both flanks non-`[a-zA-Z]`,
+//! returned `word` preserves source casing.
 //!
 //! Offsets are reported as UTF-16 code-unit indices, not UTF-8 byte offsets,
 //! so the JS caller can slice the text node directly (JS strings index by

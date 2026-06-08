@@ -1,20 +1,15 @@
-// Unified word-matching entry point: WASM-first with JS fallback.
+// Unified word-matching entry point, backed solely by the WASM matcher.
 //
-// Exposes the same `(text, wordsList) => { index, word, end }[]` signature as
-// the legacy wordMatcher, so it drops into the existing processTextNode call
-// sites. The WASM automata are rebuilt only when a new wordsList object
-// arrives (textProcessor passes one shared object per page pass), removing the
-// per-node re-sort of the whole word table. If WASM is unavailable or throws,
-// we fall back to the original JS implementation.
+// Exposes the same `(text, wordsList) => { index, word, end }[]` signature the
+// processTextNode call sites expect. The WASM automata are rebuilt only when a
+// new wordsList object arrives (textProcessor passes one shared object per page
+// pass), removing the per-node re-sort of the whole word table. There is no JS
+// fallback: if WASM is unavailable the loader throws and the feature is off.
 import {
   ensureMatcher,
   type WasmMatch,
   type WasmMatcher,
 } from '@/src/wasm/matcherLoader'
-import {
-  findDeletedWords as jsFindDeletedWords,
-  findMatchingWords as jsFindMatchingWords,
-} from './wordMatcher'
 
 type WordsList = Record<string, any>
 type WordMatch = { index: number; word: string; end: number }
@@ -23,14 +18,11 @@ type WordMatch = { index: number; word: string; end: number }
 let lastWordsList: WordsList | null = null
 
 /**
- * Return the wasm matcher with automata in sync with `wordsList`, or null if
- * wasm is unavailable. Rebuilds automata only when the wordsList changes.
+ * Return the wasm matcher with automata in sync with `wordsList`. Rebuilds
+ * automata only when the wordsList reference changes.
  */
-function syncedMatcher(
-  wordsList: WordsList,
-): WasmMatcher | null {
+function syncedMatcher(wordsList: WordsList): WasmMatcher {
   const matcher = ensureMatcher()
-  if (!matcher) return null
   if (wordsList !== lastWordsList) {
     const active: string[] = []
     const deleted: string[] = []
@@ -46,36 +38,20 @@ function syncedMatcher(
   return matcher
 }
 
-/** Active-word matches, WASM-first with JS fallback. */
+/** Active-word matches. */
 export function findMatchingWords(
   text: string,
   wordsList: WordsList,
 ): WordMatch[] {
-  const matcher = syncedMatcher(wordsList)
-  if (matcher) {
-    try {
-      return matcher.findMatches(text)
-    } catch (error) {
-      console.warn('[meow] WASM match failed, JS fallback:', error)
-    }
-  }
-  return jsFindMatchingWords(text, wordsList)
+  return syncedMatcher(wordsList).findMatches(text)
 }
 
-/** Deleted-word matches, WASM-first with JS fallback. */
+/** Deleted-word matches. */
 export function findDeletedWords(
   text: string,
   wordsList: WordsList,
 ): WordMatch[] {
-  const matcher = syncedMatcher(wordsList)
-  if (matcher) {
-    try {
-      return matcher.findDeletedMatches(text)
-    } catch (error) {
-      console.warn('[meow] WASM match failed, JS fallback:', error)
-    }
-  }
-  return jsFindDeletedWords(text, wordsList)
+  return syncedMatcher(wordsList).findDeletedMatches(text)
 }
 
 export type { WasmMatch }
