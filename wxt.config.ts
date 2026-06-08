@@ -20,6 +20,10 @@ export default defineConfig({
   manifest: {
     description: '记单词的小插件',
     permissions: ['storage'],
+    content_security_policy: {
+      extension_pages:
+        "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
+    },
     homepage_url:
       'https://github.com/yebei199/meow-memorizing',
   },

@@ -13,7 +13,9 @@ Frontend glue for the Rust→WASM word matcher (`crates/wasm-matcher`).
 (`entrypoints/background.ts`): a content script lives in the host page's
 isolated world and inherits the page CSP, so on sites without
 `wasm-unsafe-eval` (GitHub, X, …) `new WebAssembly.Module` throws
-`CompileError`. The worker's extension CSP permits WASM. Content scripts reach
-the matcher over messaging through `src/content-scripts/matcherFacade.ts`,
-which parses the wordsList into active/deleted sets and skips re-syncing the
-worker when they are unchanged.
+`CompileError`. The worker must also opt into
+`content_security_policy.extension_pages` with `'wasm-unsafe-eval'`; MV3's
+default `script-src 'self'` is not enough for `initSync`. Content scripts
+reach the matcher over messaging through
+`src/content-scripts/matcherFacade.ts`, which parses the wordsList into
+active/deleted sets and skips re-syncing the worker when they are unchanged.

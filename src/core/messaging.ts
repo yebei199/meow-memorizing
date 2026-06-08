@@ -9,7 +9,8 @@ import type {
 // in the host page's isolated world, which inherits the page CSP. On strict
 // sites (e.g. GitHub) that omit `wasm-unsafe-eval`, `new WebAssembly.Module`
 // throws `CompileError`, so the matcher must be driven over messaging from the
-// worker (whose extension CSP permits WASM).
+// worker. The worker itself also needs MV3 extension CSP to opt into
+// `wasm-unsafe-eval`.
 interface ProtocolMap {
   trans(data: IWordQuery): string;
   // Sync the active/deleted word sets into the background matcher automata.
