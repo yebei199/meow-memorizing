@@ -4,7 +4,7 @@ import TransLine from '@/src/components/transline/TransLine.tsx';
 // 用于存储原始文本节点的WeakMap
 const originalTextMap = new WeakMap<Text, string>();
 // 用于标记已处理的文本节点
-const processedTextNodes = new WeakSet<Text>();
+let processedTextNodes = new WeakSet<Text>();
 const IGNORE_SELECTOR =
   '[data-meow-ignore="true"], [data-meow-tooltip-root]';
 
@@ -99,8 +99,7 @@ export async function processTextNode(
   if (
     parent instanceof Element &&
     (parent.matches(IGNORE_SELECTOR) ||
-      parent.closest(IGNORE_SELECTOR) ||
-      parent.querySelector('p[data-word]'))
+      parent.closest(IGNORE_SELECTOR))
   ) {
     return; // 已经处理过，跳过
   }
@@ -210,7 +209,5 @@ export function restoreOriginalTextNode(
  * 重置已处理的文本节点标记（用于强制重新处理）
  */
 export function resetProcessedTextNodes(): void {
-  // 注意：WeakSet没有clear方法，所以我们创建一个新的WeakSet
-  // 在实际应用中，可能需要使用其他方式来管理已处理的节点
-  console.warn('无法直接清空WeakSet，需要刷新页面才能完全重置处理状态');
+  processedTextNodes = new WeakSet<Text>();
 }

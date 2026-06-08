@@ -2,6 +2,7 @@ import { getWordsList } from '@/src/core/storageManager';
 import {
   getAllTextNodes,
   processTextNode,
+  resetProcessedTextNodes,
 } from './domUtils';
 import { findMatchingWords } from './matcherFacade';
 
@@ -13,6 +14,9 @@ export async function processPageWords(): Promise<void> {
     // 获取单词列表
     const wordsList = await getWordsList();
     if (!wordsList) return;
+
+    // Full-page rescans must revisit existing text nodes after the word list changes.
+    resetProcessedTextNodes();
 
     // 获取页面所有文本节点
     const textNodes = getAllTextNodes();

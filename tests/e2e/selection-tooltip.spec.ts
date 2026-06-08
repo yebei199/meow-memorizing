@@ -88,3 +88,73 @@ test('shows a translation card for selected text on Google search pages', async 
     tooltip.locator('[data-meow-word-trigger="true"]'),
   ).toHaveCount(0)
 })
+
+test('adding a selected word updates all existing matches on the page', async ({
+  context,
+  page,
+}) => {
+  const worker = await getServiceWorker(context)
+  test.skip(
+    !worker,
+    'Unpacked MV3 extension/service worker unavailable in this environment.',
+  )
+
+  await worker!.evaluate(async () => {
+    await chrome.storage.sync.set({ myWords: {} })
+  })
+
+  await context.route('https://cn.bing.com/dict/clientsearch**', async (route) => {
+    await route.fulfill({
+      contentType: 'text/html; charset=utf-8',
+      body: bingResponse,
+    })
+  })
+
+  await page.goto('http://127.0.0.1:5199/sample.html')
+
+  await page.evaluate(() => {
+    const paragraph = Array.from(document.querySelectorAll('p')).find(
+      (node) => node.textContent?.includes('Say hello to the world') ?? false,
+    )
+    if (!paragraph?.firstChild || paragraph.firstChild.nodeType !== Node.TEXT_NODE) {
+      throw new Error('sample paragraph not ready')
+    }
+
+    const textNode = paragraph.firstChild
+    const text = textNode.textContent ?? ''
+    const target = 'hello'
+    const start = text.indexOf(target)
+    if (start < 0) {
+      throw new Error('target word not found')
+    }
+
+    const selection = window.getSelection()
+    if (!selection) {
+      throw new Error('selection api unavailable')
+    }
+
+    const range = document.createRange()
+    range.setStart(textNode, start)
+    range.setEnd(textNode, start + target.length)
+    selection.removeAllRanges()
+    selection.addRange(range)
+
+    const rect = range.getBoundingClientRect()
+    paragraph.dispatchEvent(
+      new MouseEvent('mouseup', {
+        bubbles: true,
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.bottom,
+      }),
+    )
+  })
+
+  const tooltip = page.locator('[data-meow-tooltip-root="selection"]')
+  await expect(tooltip).toBeVisible({ timeout: 15000 })
+
+  await tooltip.getByRole('button', { name: '加入词库' }).click()
+
+  const highlighted = page.locator('p[data-word="hello"]')
+  await expect(highlighted.first()).toBeVisible({ timeout: 15000 })
+  await expect(highlighted).toHaveCount(2)
+})
