@@ -35,4 +35,11 @@ export default defineConfig({
     // NixOS: Chrome requires --no-sandbox in a sandboxed environment.
     chromiumArgs: ['--no-sandbox'],
   },
+  zip: {
+    excludeSources: [
+      'target/**',
+      'playwright-report/**',
+      'test-results/**',
+    ],
+  },
 });
