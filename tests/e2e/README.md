@@ -22,8 +22,9 @@ real matcher (a stand-in for the background worker). This runs in any Chrome.
   UTF-16-offset path.
 - `selection-tooltip.spec.ts` — selects a word and asserts a transient
   translation card appears without nested highlight markup; also covers
-  immediate page-wide highlighting after selection and a GitHub-like
-  inline-link DOM regression.
+  immediate page-wide highlighting after selection, missing dictionary results
+  not leaving active highlights behind, and a GitHub-like inline-link DOM
+  regression.
 - `csp-matcher.spec.ts` — guards the strict-CSP fix: injects the bundle into a
   page with a GitHub-like CSP (no `wasm-unsafe-eval`) and asserts a selected
   word still highlights page-wide; plus pins that the MV3 extension CSP the
