@@ -71,6 +71,10 @@ jobs:
         if: steps.version.outputs.changed == 'true'
         run: bunx biome ci biome.jsonc package.json playwright.config.ts scripts/update-readme-gif.ts tests/e2e/bundleHarness.ts
 
+      - name: Build WASM bindings
+        if: steps.version.outputs.changed == 'true'
+        run: bun run wasm
+
       - name: Type-check
         if: steps.version.outputs.changed == 'true'
         run: bun run compile

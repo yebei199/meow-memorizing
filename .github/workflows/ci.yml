@@ -43,6 +43,9 @@ jobs:
       - name: Check formatting and lint
         run: bunx biome ci biome.jsonc package.json playwright.config.ts scripts/update-readme-gif.ts tests/e2e/bundleHarness.ts
 
+      - name: Build WASM bindings
+        run: bun run wasm
+
       - name: Type-check
         run: bun run compile
 
