@@ -1,8 +1,8 @@
-import type React from 'react'
-import type { IWordStorage } from '@/src/core/types'
-import { HAND_FONT, type Theme } from './tooltipTheme'
+import type React from 'react';
+import type { IWordStorage } from '@/src/core/types';
+import { HAND_FONT, type Theme } from './tooltipTheme';
 
-const surfacePadding = '20px 20px 18px'
+const surfacePadding = '20px 20px 18px';
 
 const actionButtonStyle: React.CSSProperties = {
   borderRadius: '999px',
@@ -11,7 +11,7 @@ const actionButtonStyle: React.CSSProperties = {
   fontWeight: 700,
   cursor: 'pointer',
   fontFamily: HAND_FONT,
-}
+};
 
 /**
  * Loading state for the translation card.
@@ -35,9 +35,11 @@ export function LoadingPanel({ theme }: { theme: Theme }) {
       >
         Translating
       </div>
-      <div style={{ color: theme.sub }}>正在获取释义...</div>
+      <div style={{ color: theme.sub }}>
+        正在获取释义...
+      </div>
     </div>
-  )
+  );
 }
 
 /**
@@ -51,18 +53,27 @@ export function LoadedPanel({
   mode,
   theme,
 }: {
-  word: string
-  dataEnd: string
-  wordLocalInfoOuter?: IWordStorage
-  handleDeleteWord: () => void
-  mode: 'stored' | 'selection'
-  theme: Theme
+  word: string;
+  dataEnd: string;
+  wordLocalInfoOuter?: IWordStorage;
+  handleDeleteWord: () => void;
+  mode: 'stored' | 'selection';
+  theme: Theme;
 }) {
-  const isSelectionMode = mode === 'selection'
+  const isSelectionMode = mode === 'selection';
+  const isSavedSelection =
+    isSelectionMode &&
+    wordLocalInfoOuter !== undefined &&
+    !wordLocalInfoOuter.isDeleted;
 
   return (
     <div style={{ padding: surfacePadding }}>
-      <div style={{ marginBottom: '12px', paddingRight: '72px' }}>
+      <div
+        style={{
+          marginBottom: '12px',
+          paddingRight: '72px',
+        }}
+      >
         <div
           style={{
             fontSize: '11px',
@@ -119,11 +130,17 @@ export function LoadedPanel({
         }}
       >
         {isSelectionMode ? (
-          <span style={{ fontSize: '12px', color: theme.sub }}>
-            已加入词库，页面中同词会保持高亮可查。
+          <span
+            style={{ fontSize: '12px', color: theme.sub }}
+          >
+            {isSavedSelection
+              ? '已加入词库，页面中同词会保持高亮可查。'
+              : '未加入词库，页面不会高亮该词。'}
           </span>
         ) : (
-          <span style={{ color: theme.sub, fontSize: '12px' }}>
+          <span
+            style={{ color: theme.sub, fontSize: '12px' }}
+          >
             查询次数:
             <span
               style={{
@@ -154,7 +171,7 @@ export function LoadedPanel({
               fontWeight: 800,
             }}
           >
-            已加入词库
+            {isSavedSelection ? '已加入词库' : '未收录'}
           </span>
         ) : (
           <button
@@ -173,5 +190,5 @@ export function LoadedPanel({
         )}
       </div>
     </div>
-  )
+  );
 }

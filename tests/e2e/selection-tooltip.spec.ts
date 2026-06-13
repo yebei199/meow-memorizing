@@ -89,6 +89,44 @@ test('selecting a word immediately highlights all existing matches', async ({
   await h.close();
 });
 
+test('does not keep a highlight for a selected word without dictionary results', async ({
+  browser,
+}) => {
+  const h = await setupBundleHarness(browser, {
+    url: 'http://127.0.0.1:5199/sample.html',
+    transResponse:
+      '<html><body>No dictionary result</body></html>',
+  });
+
+  await h.page.evaluate(() => {
+    const host = document.createElement('p');
+    host.id = 'missing-selection-target';
+    host.textContent =
+      'Missing dictionary word: quizzacious';
+    document.body.appendChild(host);
+  });
+
+  await h.page.waitForTimeout(STARTUP_MS);
+  await selectWord(
+    h.page,
+    '#missing-selection-target',
+    'quizzacious',
+  );
+
+  const tooltip = h.page.locator(
+    '[data-meow-tooltip-root="selection"]',
+  );
+  await expect(tooltip).toHaveCount(1, { timeout: 15000 });
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText('未找到翻译');
+  await expect(tooltip).toContainText('未收录');
+  await expect(
+    h.page.locator('[data-word="quizzacious"]'),
+  ).toHaveCount(0);
+
+  await h.close();
+});
+
 test('selecting a word inside an existing highlight tree immediately highlights it', async ({
   browser,
 }) => {
@@ -104,10 +142,9 @@ test('selecting a word inside an existing highlight tree immediately highlights 
     },
   });
 
-  await expect(h.page.locator('[data-word="hello"]')).toHaveCount(
-    2,
-    { timeout: 15000 },
-  );
+  await expect(
+    h.page.locator('[data-word="hello"]'),
+  ).toHaveCount(2, { timeout: 15000 });
 
   await selectWord(h.page, 'body', 'world');
 
@@ -118,10 +155,9 @@ test('selecting a word inside an existing highlight tree immediately highlights 
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('已加入词库');
 
-  await expect(h.page.locator('[data-word="world"]')).toHaveCount(
-    1,
-    { timeout: 15000 },
-  );
+  await expect(
+    h.page.locator('[data-word="world"]'),
+  ).toHaveCount(1, { timeout: 15000 });
 
   await h.close();
 });

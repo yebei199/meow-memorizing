@@ -10,5 +10,16 @@ Build helpers for the Rust→WASM matcher.
 - `inline-wasm.ts` — embed the compiled `.wasm` as base64
   (`src/wasm/generated/matcher-inline.ts`) so the content script is
   self-contained.
+- `package-extensions.rs` — clean old project ZIP artifacts, build WASM once,
+  then create Chrome and Firefox
+  production ZIP artifacts plus the Firefox source ZIP under `.output/`; it
+  also refreshes the `.output/chrome-mv3-build` unpacked Chrome directory used
+  for local loading.
+- `update-readme-gif.ts` — build-time documentation helper that records the
+  real content bundle through the Playwright e2e harness, converts the WebM
+  recording to GIF with `ffmpeg`, uploads it to Zipline
+  (`ZIPLINE_TOKEN`, optional `ZIPLINE_URL`), and replaces the README demo image
+  URL.
 
-Run both via `bun run wasm`; the `build` scripts call it automatically.
+Run the WASM steps via `bun run wasm`; the `build` scripts call them
+automatically. Regenerate the README demo with `bun run docs:gif`.

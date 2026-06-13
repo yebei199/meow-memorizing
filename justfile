@@ -22,9 +22,11 @@ dev-ff:
 wasm:
     bun run wasm
 
-# Full extension build (wasm + wxt build + copy)
+# Full extension package build (clean old zips + Chrome/Firefox/source zips)
 build:
-    bun run build
+    mkdir -p target
+    rustc --edition=2021 scripts/package-extensions.rs -o target/package-extensions
+    target/package-extensions
 
 # Full extension build for Firefox
 build-ff:

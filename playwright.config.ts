@@ -1,10 +1,6 @@
-import { defineConfig } from '@playwright/test'
+import { defineConfig } from '@playwright/test';
 
-// System Chrome is used (no Playwright-managed browser); override with
-// PLAYWRIGHT_CHROME. Extension loading requires a real Chrome/Chromium.
-const chrome =
-  process.env.PLAYWRIGHT_CHROME ??
-  '/etc/profiles/per-user/yb/bin/google-chrome'
+const chrome = process.env.PLAYWRIGHT_CHROME ?? undefined;
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -26,4 +22,4 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
   },
-})
+});

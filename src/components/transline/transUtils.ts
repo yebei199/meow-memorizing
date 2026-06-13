@@ -35,20 +35,20 @@ export function checkAndUseCache(
 /**
  * 解析html字符串
  */
-export function parseBingDict(htmlString: string) {
+export function parseBingDict(
+  htmlString: string,
+): string | null {
   const parser = new DOMParser();
   const doc = parser.parseFromString(
     htmlString,
-    'text/html'
+    'text/html',
   );
 
   const element = doc
     .querySelector('#clientnewword')
     ?.getAttribute('data-definition');
 
-  if (!element) {
-    return '没找到';
-  }
+  if (!element) return null;
 
   // 使用通用正则表达式匹配词性格式（字母加点的模式）
   // 在每个词性前添加换行（除了第一个）
@@ -168,18 +168,26 @@ async function fetchAndProcessNetworkData(
 ) {
   try {
     const htmlString = await sendMessage('trans', { word });
-    const element = parseBingDict(htmlString);
-    if (element) {
+    const definition = parseBingDict(htmlString);
+    if (definition) {
       // 缓存结果
       const cacheEntry = {
-        data: element,
+        data: definition,
         timestamp: Date.now(),
       };
       translationCache.set(word, cacheEntry);
-      setDataEnd(element);
+      setDataEnd(definition);
     } else {
-      await deleteWord(word);
+      const normalizedWord = word.trim().toLowerCase();
+      window.dispatchEvent(
+        new CustomEvent('deleteWord', {
+          detail: normalizedWord,
+        }),
+      );
+      await deleteWord(normalizedWord);
+      setWordLocalInfoOuter(undefined);
       setDataEnd('未找到翻译');
+      return;
     }
   } catch (error) {
     console.error('获取翻译失败:', error);

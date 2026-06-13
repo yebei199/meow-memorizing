@@ -23,13 +23,19 @@ https://chromewebstore.google.com/detail/ginipindgefglbpiaogadmdknaaojdhp?utm_so
 
 ![example.gif](https://i.imgur.com/UMXpOQS.gif)
 
-## 打包(已解压)
+## 打包
 
 ```shell
 bun run build
 ```
-解压后的插件位置: .output\chrome-mv3-build
-之后谷歌浏览器开发者模式直接安装插件即可
+
+产物位置:
+- Chrome zip: `.output/meow-memorizing-<version>-chrome.zip`
+- Firefox zip: `.output/meow-memorizing-<version>-firefox.zip`
+- Source zip: `.output/meow-memorizing-<version>-sources.zip`
+- Chrome 已解压目录: `.output/chrome-mv3-build`
+
+之后谷歌浏览器开发者模式可直接安装已解压目录；商店或发布流程使用对应 zip。
 
 ## 高性能词匹配 (Rust + WASM)
 
