@@ -33,7 +33,7 @@ bun run build
 - Chrome zip: `.output/meow-memorizing-<version>-chrome.zip`
 - Firefox zip: `.output/meow-memorizing-<version>-firefox.zip`
 - Source zip: `.output/meow-memorizing-<version>-sources.zip`
-- Chrome 已解压目录: `.output\chrome-mv3-build`
+- Chrome 已解压目录: `.output/chrome-mv3-build`
 
 之后谷歌浏览器开发者模式可直接安装已解压目录；商店或发布流程使用对应 zip。
 
