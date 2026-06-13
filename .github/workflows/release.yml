@@ -129,8 +129,9 @@ jobs:
         run: |
           if ! git rev-parse "$TAG" >/dev/null 2>&1; then
             git tag "$TAG" "$GITHUB_SHA"
-            git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" \
-              push origin "refs/tags/$TAG"
+            git push \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+              "refs/tags/$TAG"
           fi
 
           if gh release view "$TAG" >/dev/null 2>&1; then
