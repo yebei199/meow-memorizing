@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt,clippy
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install wasm-bindgen CLI
+        run: cargo install wasm-bindgen-cli --version 0.2.122 --locked
+
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Check formatting and lint
+        run: bunx biome ci biome.jsonc package.json playwright.config.ts scripts/update-readme-gif.ts tests/e2e/bundleHarness.ts
+
+      - name: Type-check
+        run: bun run compile
+
+      - name: Lint Rust
+        run: bun run lint:rust
+
+      - name: Test Rust
+        run: cargo test -p wasm-matcher
+
+      - name: Build extension packages
+        run: bun run build
+
+      - name: Run Playwright tests
+        run: xvfb-run -a bun run test:e2e
+
+      - name: Upload extension artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zips
+          path: .output/*.zip
+          if-no-files-found: ignore
