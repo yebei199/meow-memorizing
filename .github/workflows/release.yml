@@ -59,6 +59,12 @@ jobs:
         if: steps.version.outputs.changed == 'true'
         uses: Swatinem/rust-cache@v2
 
+      - name: Install system linker tools
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mold
+
       - name: Install dependencies
         if: steps.version.outputs.changed == 'true'
         run: bun install --frozen-lockfile

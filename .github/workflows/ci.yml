@@ -35,6 +35,11 @@ jobs:
       - name: Cache Rust
         uses: Swatinem/rust-cache@v2
 
+      - name: Install system linker tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mold
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
