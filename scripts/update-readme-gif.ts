@@ -139,13 +139,8 @@ async function isServerReady(): Promise<boolean> {
 }
 
 async function launchBrowser() {
-  const localChrome =
-    '/etc/profiles/per-user/yb/bin/google-chrome';
   const executablePath =
-    process.env.PLAYWRIGHT_CHROME ??
-    (existsSync(localChrome) && !process.env.CI
-      ? localChrome
-      : undefined);
+    process.env.PLAYWRIGHT_CHROME ?? undefined;
 
   return chromium.launch({
     executablePath,
