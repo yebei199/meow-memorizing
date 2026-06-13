@@ -69,12 +69,12 @@ jobs:
 
       - name: Stage extension artifacts
         run: |
-          rm -rf .artifacts
-          mkdir -p .artifacts
-          cp .output/meow-memorizing-*-chrome.zip .artifacts/
-          cp .output/meow-memorizing-*-firefox.zip .artifacts/
-          cp .output/meow-memorizing-*-sources.zip .artifacts/
-          ls -lh .artifacts
+          rm -rf artifacts
+          mkdir -p artifacts
+          cp .output/meow-memorizing-*-chrome.zip artifacts/
+          cp .output/meow-memorizing-*-firefox.zip artifacts/
+          cp .output/meow-memorizing-*-sources.zip artifacts/
+          ls -lh artifacts
 
       - name: Run Playwright tests
         run: xvfb-run -a bun run test:e2e
@@ -84,5 +84,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: extension-zips
-          path: .artifacts/*.zip
+          path: artifacts/*.zip
           if-no-files-found: error

@@ -104,12 +104,12 @@ jobs:
       - name: Stage extension artifacts
         if: steps.version.outputs.changed == 'true'
         run: |
-          rm -rf .artifacts
-          mkdir -p .artifacts
-          cp .output/meow-memorizing-*-chrome.zip .artifacts/
-          cp .output/meow-memorizing-*-firefox.zip .artifacts/
-          cp .output/meow-memorizing-*-sources.zip .artifacts/
-          ls -lh .artifacts
+          rm -rf artifacts
+          mkdir -p artifacts
+          cp .output/meow-memorizing-*-chrome.zip artifacts/
+          cp .output/meow-memorizing-*-firefox.zip artifacts/
+          cp .output/meow-memorizing-*-sources.zip artifacts/
+          ls -lh artifacts
 
       - name: Run Playwright tests
         if: steps.version.outputs.changed == 'true'
@@ -128,9 +128,9 @@ jobs:
           fi
 
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" .artifacts/*.zip --clobber
+            gh release upload "$TAG" artifacts/*.zip --clobber
           else
-            gh release create "$TAG" .artifacts/*.zip \
+            gh release create "$TAG" artifacts/*.zip \
               --title "$TAG" \
               --generate-notes
           fi
