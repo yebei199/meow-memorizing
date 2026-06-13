@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
 
 concurrency:
   group: release-${{ github.ref }}
@@ -27,87 +27,68 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Detect version change
+      - name: Validate release tag
         id: version
         shell: bash
         run: |
           current="$(node -p "require('./package.json').version")"
-          previous="$(
-            git show HEAD^:package.json 2>/dev/null \
-              | node -pe "JSON.parse(require('fs').readFileSync(0, 'utf8')).version" \
-              || true
-          )"
+          expected="v$current"
 
-          if [[ "$current" == "$previous" ]]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
+          if [[ "$GITHUB_REF_NAME" != "$expected" ]]; then
+            echo "Release tag $GITHUB_REF_NAME does not match package version $expected" >&2
+            exit 1
           fi
 
-          echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "version=$current" >> "$GITHUB_OUTPUT"
-          echo "tag=v$current" >> "$GITHUB_OUTPUT"
+          echo "tag=$expected" >> "$GITHUB_OUTPUT"
 
       - name: Set up Bun
-        if: steps.version.outputs.changed == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
       - name: Set up Rust
-        if: steps.version.outputs.changed == 'true'
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
           components: rustfmt,clippy
 
       - name: Cache Rust
-        if: steps.version.outputs.changed == 'true'
         uses: Swatinem/rust-cache@v2
 
       - name: Install system linker tools
-        if: steps.version.outputs.changed == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y mold
 
       - name: Install dependencies
-        if: steps.version.outputs.changed == 'true'
         run: bun install --frozen-lockfile
 
       - name: Install wasm-bindgen CLI
-        if: steps.version.outputs.changed == 'true'
         run: cargo install wasm-bindgen-cli --version 0.2.122 --locked
 
       - name: Install Chromium
-        if: steps.version.outputs.changed == 'true'
         run: bunx playwright install --with-deps chromium
 
       - name: Check formatting and lint
-        if: steps.version.outputs.changed == 'true'
         run: bunx biome ci biome.jsonc package.json playwright.config.ts scripts/update-readme-gif.ts tests/e2e/bundleHarness.ts
 
       - name: Build WASM bindings
-        if: steps.version.outputs.changed == 'true'
         run: bun run wasm
 
       - name: Type-check
-        if: steps.version.outputs.changed == 'true'
         run: bun run compile
 
       - name: Lint Rust
-        if: steps.version.outputs.changed == 'true'
         run: bun run lint:rust
 
       - name: Test Rust
-        if: steps.version.outputs.changed == 'true'
         run: cargo test -p wasm-matcher
 
       - name: Build extension packages
-        if: steps.version.outputs.changed == 'true'
         run: bun run build
 
       - name: Stage extension artifacts
-        if: steps.version.outputs.changed == 'true'
         run: |
           rm -rf artifacts
           mkdir -p artifacts
@@ -117,23 +98,14 @@ jobs:
           ls -lh artifacts
 
       - name: Run Playwright tests
-        if: steps.version.outputs.changed == 'true'
         run: xvfb-run -a bun run test:e2e
 
       - name: Publish GitHub release
-        if: steps.version.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
         shell: bash
         run: |
-          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
-            git tag "$TAG" "$GITHUB_SHA"
-            git push \
-              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-              "refs/tags/$TAG"
-          fi
-
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" artifacts/*.zip --clobber
           else

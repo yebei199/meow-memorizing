@@ -1,7 +1,7 @@
 # tests/e2e
 
-Playwright end-to-end tests. Run with `bun run test:e2e` (requires a built
-extension: `bun run build`, and the wasm glue from `bun run wasm`).
+Playwright end-to-end tests. Run with `bun run build:test` first, then
+`bun run test:e2e`.
 
 Tests do **not** load the unpacked extension: recent Chrome (≥ ~137; 148 here)
 blocks `--load-extension`, and CDP `Extensions.loadUnpacked` leaves the
@@ -34,5 +34,5 @@ real matcher (a stand-in for the background worker). This runs in any Chrome.
   both timings.
 
 Browser: system Chrome (no Playwright-managed binary). Override the path with
-`PLAYWRIGHT_CHROME`. All specs need a fresh `bun run build` (they read the
-built `.output/chrome-mv3` bundle + manifest).
+`PLAYWRIGHT_CHROME`. All specs need a fresh `bun run build:test` (they read
+the built `.output/chrome-mv3` bundle + manifest).
