@@ -101,6 +101,16 @@ jobs:
         if: steps.version.outputs.changed == 'true'
         run: bun run build
 
+      - name: Stage extension artifacts
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          rm -rf .artifacts
+          mkdir -p .artifacts
+          cp .output/meow-memorizing-*-chrome.zip .artifacts/
+          cp .output/meow-memorizing-*-firefox.zip .artifacts/
+          cp .output/meow-memorizing-*-sources.zip .artifacts/
+          ls -lh .artifacts
+
       - name: Run Playwright tests
         if: steps.version.outputs.changed == 'true'
         run: xvfb-run -a bun run test:e2e
@@ -118,9 +128,9 @@ jobs:
           fi
 
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" .output/*.zip --clobber
+            gh release upload "$TAG" .artifacts/*.zip --clobber
           else
-            gh release create "$TAG" .output/*.zip \
+            gh release create "$TAG" .artifacts/*.zip \
               --title "$TAG" \
               --generate-notes
           fi
