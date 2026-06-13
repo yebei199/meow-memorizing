@@ -21,7 +21,7 @@
 https://chromewebstore.google.com/detail/ginipindgefglbpiaogadmdknaaojdhp?utm_source=item-share-cb
 # 使用方法如下
 
-![example.gif](https://i.imgur.com/UMXpOQS.gif)
+![example.gif](https://upload.cryptorust.uk/u/67HVap.gif)
 
 ## 打包
 
