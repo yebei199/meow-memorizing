@@ -6,7 +6,7 @@
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_small)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=shield&issueType=security)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_shield&issueType=security)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_shield&issueType=license)
-![License](https://img.shields.io/github/license/pot-app/pot-desktop.svg)
+![License](https://img.shields.io/github/license/yebei199/meow-memorizing.svg)
 
 ![ts](https://img.shields.io/badge/typescript-blue?logo=typescript&logoColor=white)
 ![react](https://img.shields.io/badge/react-blue?logo=react&logoColor=white)
@@ -21,7 +21,7 @@
 https://chromewebstore.google.com/detail/ginipindgefglbpiaogadmdknaaojdhp?utm_source=item-share-cb
 # 使用方法如下
 
-![example.gif](https://i.imgur.com/UMXpOQS.gif)
+![example.gif](https://upload.cryptorust.uk/u/67HVap.gif)
 
 ## 打包
 
