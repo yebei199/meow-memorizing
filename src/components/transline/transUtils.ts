@@ -178,10 +178,13 @@ async function fetchAndProcessNetworkData(
       translationCache.set(word, cacheEntry);
       setDataEnd(definition);
     } else {
+      const normalizedWord = word.trim().toLowerCase();
       window.dispatchEvent(
-        new CustomEvent('deleteWord', { detail: word }),
+        new CustomEvent('deleteWord', {
+          detail: normalizedWord,
+        }),
       );
-      await deleteWord(word);
+      await deleteWord(normalizedWord);
       setWordLocalInfoOuter(undefined);
       setDataEnd('未找到翻译');
       return;
