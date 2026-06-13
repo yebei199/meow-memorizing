@@ -49,6 +49,13 @@ export interface BundleHarness {
 export interface HarnessOptions {
   /** Fixture URL to load the content bundle into (served by server.ts). */
   url: string;
+  /** Optional content-page viewport, mainly for deterministic demo captures. */
+  viewport?: { width: number; height: number };
+  /** Optional video recording for the content page context. */
+  recordVideo?: {
+    dir: string;
+    size?: { width: number; height: number };
+  };
   /** Optional host-page CSP header to apply to `url`. */
   csp?: string;
   /** Seed `myWords` before the bundle's startup scan reads storage. */
@@ -70,9 +77,9 @@ export async function setupBundleHarness(
   const worker = await workerCtx.newPage();
   await worker.goto(`${BASE}/sample.html`);
   await worker.evaluate(async () => {
-    const mod = await import(
-      'http://127.0.0.1:5199/wasm/matcher.js'
-    );
+    const matcherUrl =
+      'http://127.0.0.1:5199/wasm/matcher.js';
+    const mod = await import(matcherUrl);
     await mod.default();
     (window as unknown as WorkerWindow).__m =
       mod as unknown as WasmModule;
@@ -118,7 +125,12 @@ export async function setupBundleHarness(
     return undefined;
   };
 
-  const contentCtx = await browser.newContext();
+  const contentCtx = await browser.newContext({
+    ...(opts.viewport ? { viewport: opts.viewport } : {}),
+    ...(opts.recordVideo
+      ? { recordVideo: opts.recordVideo }
+      : {}),
+  });
   const page = await contentCtx.newPage();
   await page.exposeFunction('__bg', bg);
   if (opts.csp) {

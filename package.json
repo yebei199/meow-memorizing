@@ -14,6 +14,7 @@
     "build:firefox": "bun run wasm && wxt zip -b firefox --sources",
     "zip": "bun run build:chrome",
     "zip:firefox": "bun run build:firefox",
+    "docs:gif": "bun run build && bun run scripts/update-readme-gif.ts",
     "compile": "tsc --noEmit",
     "check:rust": "cargo check -p wasm-matcher --target wasm32-unknown-unknown",
     "lint:rust": "cargo fmt --all --check && cargo clippy -p wasm-matcher --target wasm32-unknown-unknown -- -D warnings",
