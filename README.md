@@ -3,9 +3,6 @@
 
 > 🐈️  一个简单易用的记单词浏览器插件 ([讨论](https://github.com/yebei199/meow-memorizing/discussions))
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_small)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=shield&issueType=security)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_shield&issueType=security)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_shield&issueType=license)
 ![License](https://img.shields.io/github/license/yebei199/meow-memorizing.svg)
 
 ![ts](https://img.shields.io/badge/typescript-blue?logo=typescript&logoColor=white)
@@ -68,5 +65,3 @@ Code: (c) 2024 - Present - yebei199
 **License**: GPL-3.0-only
 
 **License Text**: [View License Text](LICENSE)
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyebei199%2Fmeow-memorizing?ref=badge_large)
