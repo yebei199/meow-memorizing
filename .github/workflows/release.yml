@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -21,6 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Detect version change
         id: version
@@ -124,7 +129,8 @@ jobs:
         run: |
           if ! git rev-parse "$TAG" >/dev/null 2>&1; then
             git tag "$TAG" "$GITHUB_SHA"
-            git push origin "refs/tags/$TAG"
+            git -c http.extraheader="AUTHORIZATION: bearer $GH_TOKEN" \
+              push origin "refs/tags/$TAG"
           fi
 
           if gh release view "$TAG" >/dev/null 2>&1; then
