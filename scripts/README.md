@@ -22,4 +22,6 @@ Build helpers for the Rust→WASM matcher.
   URL.
 
 Run the WASM steps via `bun run wasm`; the `build` scripts call them
-automatically. Regenerate the README demo with `bun run docs:gif`.
+automatically. `bun run build:test` creates only the Chrome bundle needed by
+Playwright and does not create release ZIPs. Regenerate the README demo with
+`bun run docs:gif`.

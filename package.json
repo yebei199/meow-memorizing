@@ -10,6 +10,7 @@
     "dev:firefox": "wxt -b firefox",
     "wasm": "bash scripts/build-wasm.sh && bun run scripts/inline-wasm.ts",
     "build": "mkdir -p target && rustc --edition=2021 scripts/package-extensions.rs -o target/package-extensions && target/package-extensions",
+    "build:test": "bun run wasm && bunx wxt build -b chrome",
     "build:chrome": "bun run wasm && wxt zip -b chrome && bun run src/copy.ts",
     "build:firefox": "bun run wasm && wxt zip -b firefox --sources",
     "zip": "bun run build:chrome",
