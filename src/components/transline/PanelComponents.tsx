@@ -50,6 +50,7 @@ export function LoadedPanel({
   dataEnd,
   wordLocalInfoOuter,
   handleDeleteWord,
+  handleIgnoreWord,
   mode,
   theme,
 }: {
@@ -57,6 +58,7 @@ export function LoadedPanel({
   dataEnd: string;
   wordLocalInfoOuter?: IWordStorage;
   handleDeleteWord: () => void;
+  handleIgnoreWord: () => void;
   mode: 'stored' | 'selection';
   theme: Theme;
 }) {
@@ -160,34 +162,57 @@ export function LoadedPanel({
           </span>
         )}
 
-        {isSelectionMode ? (
-          <span
-            style={{
-              borderRadius: '999px',
-              background: theme.chipBg,
-              color: theme.chipText,
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: 800,
-            }}
-          >
-            {isSavedSelection ? '已加入词库' : '未收录'}
-          </span>
-        ) : (
-          <button
-            type='button'
-            onClick={handleDeleteWord}
-            title='删除单词（不再查询该单词）'
-            style={{
-              ...actionButtonStyle,
-              border: `2px solid ${theme.dangerText}`,
-              background: theme.dangerBg,
-              color: theme.dangerText,
-            }}
-          >
-            移除单词
-          </button>
-        )}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          {isSelectionMode ? (
+            <span
+              style={{
+                borderRadius: '999px',
+                background: theme.chipBg,
+                color: theme.chipText,
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 800,
+              }}
+            >
+              {isSavedSelection ? '已加入词库' : '未收录'}
+            </span>
+          ) : (
+            <button
+              type='button'
+              onClick={handleDeleteWord}
+              title='删除单词（不再查询该单词）'
+              style={{
+                ...actionButtonStyle,
+                border: `2px solid ${theme.dangerText}`,
+                background: theme.dangerBg,
+                color: theme.dangerText,
+              }}
+            >
+              移除单词
+            </button>
+          )}
+          {wordLocalInfoOuter && (
+            <button
+              type='button'
+              onClick={handleIgnoreWord}
+              title='停用词：以后选中该词不再弹出翻译面板'
+              style={{
+                ...actionButtonStyle,
+                border: `2px solid ${theme.sub}`,
+                background: 'transparent',
+                color: theme.sub,
+              }}
+            >
+              停用词
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

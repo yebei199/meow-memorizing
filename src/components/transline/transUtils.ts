@@ -67,7 +67,9 @@ export async function fetchData(
   setLoading: (loading: boolean) => void,
   setWordLocalInfoOuter: (info: any) => void,
   addWordLocal: (info: any) => Promise<void>,
-  deleteWord: (word: string) => Promise<void>,
+  markUntranslatable: (word: string) => Promise<void>,
+  onUntranslatable: () => void,
+  clearUntranslatable: (word: string) => Promise<void>,
   translationCache: Map<
     string,
     { data: string; timestamp: number }
@@ -77,7 +79,7 @@ export async function fetchData(
 ) {
   const wordLocalInfo = await queryWord(word);
   if (mode === 'stored') {
-    if (wordLocalInfo && wordLocalInfo.isDeleted) {
+    if (wordLocalInfo?.isDeleted) {
       setWordLocalInfoOuter(wordLocalInfo);
       setDataEnd('该单词已被删除，不再显示翻译');
       setLoading(false);
@@ -109,7 +111,9 @@ export async function fetchData(
     wordLocalInfo,
     setWordLocalInfoOuter,
     addWordLocal,
-    deleteWord,
+    markUntranslatable,
+    onUntranslatable,
+    clearUntranslatable,
     translationCache,
   );
 }
@@ -151,7 +155,11 @@ async function handleCachedData(
 }
 
 /**
- * 从网络获取并处理数据
+ * 从网络获取并处理数据。查无翻译或请求失败时，不展示任何错误文案——
+ * 静默关闭面板（onUntranslatable），并把该词标记为 isUntranslatable
+ * （见 wordProcessor.markUntranslatable，带冷却重试），而不是当作
+ * 用户手动删除。仍然复用 deleteWord 事件让 T2 里已挂载的高亮实例
+ * 立即隐藏，无需等下一次整页扫描。
  */
 async function fetchAndProcessNetworkData(
   word: string,
@@ -160,40 +168,51 @@ async function fetchAndProcessNetworkData(
   wordLocalInfo: any,
   setWordLocalInfoOuter: (info: any) => void,
   addWordLocal: (info: any) => Promise<void>,
-  deleteWord: (word: string) => Promise<void>,
+  markUntranslatable: (word: string) => Promise<void>,
+  onUntranslatable: () => void,
+  clearUntranslatable: (word: string) => Promise<void>,
   translationCache: Map<
     string,
     { data: string; timestamp: number }
   >,
 ) {
+  const normalizedWord = word.trim().toLowerCase();
+
+  async function handleUntranslatable() {
+    window.dispatchEvent(
+      new CustomEvent('deleteWord', {
+        detail: normalizedWord,
+      }),
+    );
+    await markUntranslatable(normalizedWord);
+    setWordLocalInfoOuter(undefined);
+    setLoading(false);
+    onUntranslatable();
+  }
+
   try {
     const htmlString = await sendMessage('trans', { word });
     const definition = parseBingDict(htmlString);
-    if (definition) {
-      // 缓存结果
-      const cacheEntry = {
-        data: definition,
-        timestamp: Date.now(),
-      };
-      translationCache.set(word, cacheEntry);
-      setDataEnd(definition);
-    } else {
-      const normalizedWord = word.trim().toLowerCase();
-      window.dispatchEvent(
-        new CustomEvent('deleteWord', {
-          detail: normalizedWord,
-        }),
-      );
-      await deleteWord(normalizedWord);
-      setWordLocalInfoOuter(undefined);
-      setDataEnd('未找到翻译');
+    if (!definition) {
+      await handleUntranslatable();
       return;
     }
+
+    // 缓存结果
+    const cacheEntry = {
+      data: definition,
+      timestamp: Date.now(),
+    };
+    translationCache.set(word, cacheEntry);
+    setDataEnd(definition);
+    setLoading(false);
+    // 冷却重试后翻译成功：清除查无翻译标记，恢复该词的正常高亮/弹窗。
+    // 对从未被标记过的词是安全的空操作（见 clearUntranslatable 自身的判空）。
+    await clearUntranslatable(normalizedWord);
   } catch (error) {
     console.error('获取翻译失败:', error);
-    setDataEnd('获取翻译失败');
-  } finally {
-    setLoading(false);
+    await handleUntranslatable();
+    return;
   }
 
   // 更新查询次数

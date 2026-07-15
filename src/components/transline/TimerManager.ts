@@ -7,10 +7,14 @@ export class TimerManager {
    * @param callback 回调函数
    * @param delay 延迟时间（毫秒）
    */
-  setTimer(name: string, callback: () => void, delay: number): void {
+  setTimer(
+    name: string,
+    callback: () => void,
+    delay: number,
+  ): void {
     // 清除已存在的同名定时器
     this.clearTimer(name);
-    
+
     const timerId = window.setTimeout(callback, delay);
     this.timers.set(name, timerId);
   }

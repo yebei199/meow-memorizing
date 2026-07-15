@@ -3,36 +3,37 @@ import {
   useEffect,
   useMemo,
   useState,
-} from 'react'
+} from 'react';
+import { processPageWords } from '@/src/content-scripts/ergodicWords';
+import { addWordLocal } from '@/src/core/storageManager';
+import type { IWordStorage } from '@/src/core/types';
 import {
-  addWordLocal,
-} from '@/src/core/storageManager'
-import type { IWordStorage } from '@/src/core/types'
-import {
+  clearUntranslatable,
   deleteWord,
-} from '@/src/core/wordProcessor'
+  ignoreWord,
+  markUntranslatable,
+} from '@/src/core/wordProcessor';
 import {
   LoadedPanel,
   LoadingPanel,
-} from './PanelComponents'
+} from './PanelComponents';
 import {
   HAND_FONT,
   SKETCH_RADIUS,
-  type ThemeName,
   THEMES,
-} from './tooltipTheme'
+  type ThemeName,
+} from './tooltipTheme';
 import {
   CACHE_EXPIRY,
   fetchData,
   translationCache,
-} from './transUtils'
-import { processPageWords } from '@/src/content-scripts/ergodicWords'
+} from './transUtils';
 
 interface HoverTooltipProps {
-  word: string
-  mode?: 'stored' | 'selection'
-  onClose?: () => void
-  style?: React.CSSProperties
+  word: string;
+  mode?: 'stored' | 'selection';
+  onClose?: () => void;
+  style?: React.CSSProperties;
 }
 
 function fetchWordData(
@@ -43,6 +44,7 @@ function fetchWordData(
   setWordLocalInfoOuter: (
     info: IWordStorage | undefined,
   ) => void,
+  onUntranslatable: () => void,
 ): void {
   fetchData(
     word,
@@ -50,11 +52,13 @@ function fetchWordData(
     setLoading,
     setWordLocalInfoOuter,
     addWordLocal,
-    deleteWord,
+    markUntranslatable,
+    onUntranslatable,
+    clearUntranslatable,
     translationCache,
     CACHE_EXPIRY,
     mode,
-  ).catch(console.error)
+  ).catch(console.error);
 }
 
 function useWordDelete(
@@ -63,21 +67,54 @@ function useWordDelete(
 ) {
   return useCallback(async () => {
     if (!wordLocalInfoOuter) {
-      return
+      return;
     }
 
-    onClose?.()
+    onClose?.();
 
     const event = new CustomEvent('deleteWord', {
       detail: wordLocalInfoOuter.word,
-    })
-    window.dispatchEvent(event)
+    });
+    window.dispatchEvent(event);
 
     setTimeout(async () => {
-      await deleteWord(wordLocalInfoOuter.word)
-      await processPageWords()
-    }, 10)
-  }, [onClose, wordLocalInfoOuter])
+      await deleteWord(wordLocalInfoOuter.word);
+      await processPageWords();
+    }, 10);
+  }, [onClose, wordLocalInfoOuter]);
+}
+
+/**
+ * 停用词是全新的独立状态（永不翻译），与「移除单词/已记住」互不影响；
+ * 需要二次确认，防止误触。确认后复用 deleteWord 事件让页面上已挂载的
+ * 高亮实例立即隐藏，无需等下一次整页扫描。
+ */
+function useWordIgnore(
+  wordLocalInfoOuter: IWordStorage | undefined,
+  onClose?: () => void,
+) {
+  return useCallback(async () => {
+    if (!wordLocalInfoOuter) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `将 "${wordLocalInfoOuter.word}" 设为停用词？以后选中它不会再弹出翻译面板，出现小圆点时点击即可恢复。`,
+    );
+    if (!confirmed) return;
+
+    onClose?.();
+
+    const event = new CustomEvent('deleteWord', {
+      detail: wordLocalInfoOuter.word,
+    });
+    window.dispatchEvent(event);
+
+    setTimeout(async () => {
+      await ignoreWord(wordLocalInfoOuter.word);
+      await processPageWords();
+    }, 10);
+  }, [onClose, wordLocalInfoOuter]);
 }
 
 /**
@@ -90,12 +127,13 @@ export default function HoverTooltip({
   style,
 }: HoverTooltipProps) {
   const [wordLocalInfoOuter, setWordLocalInfoOuter] =
-    useState<IWordStorage>()
-  const [dataEnd, setDataEnd] = useState('')
-  const [loading, setLoading] = useState(true)
+    useState<IWordStorage>();
+  const [dataEnd, setDataEnd] = useState('');
+  const [loading, setLoading] = useState(true);
   // Hand-drawn card defaults to dark mode; the top-right toggle flips it.
-  const [themeName, setThemeName] = useState<ThemeName>('dark')
-  const theme = THEMES[themeName]
+  const [themeName, setThemeName] =
+    useState<ThemeName>('dark');
+  const theme = THEMES[themeName];
 
   useEffect(() => {
     fetchWordData(
@@ -104,21 +142,28 @@ export default function HoverTooltip({
       setDataEnd,
       setLoading,
       setWordLocalInfoOuter,
-    )
-  }, [mode, word])
+      () => onClose?.(),
+    );
+  }, [mode, word, onClose]);
 
   const handleDeleteWord = useWordDelete(
     wordLocalInfoOuter,
     onClose,
-  )
+  );
+  const handleIgnoreWord = useWordIgnore(
+    wordLocalInfoOuter,
+    onClose,
+  );
 
   const toggleTheme = useCallback(() => {
-    setThemeName((prev) => (prev === 'dark' ? 'light' : 'dark'))
-  }, [])
+    setThemeName((prev) =>
+      prev === 'dark' ? 'light' : 'dark',
+    );
+  }, []);
 
   const panelContent = useMemo(() => {
     if (loading) {
-      return <LoadingPanel theme={theme} />
+      return <LoadingPanel theme={theme} />;
     }
 
     return (
@@ -127,19 +172,21 @@ export default function HoverTooltip({
         dataEnd={dataEnd}
         wordLocalInfoOuter={wordLocalInfoOuter}
         handleDeleteWord={handleDeleteWord}
+        handleIgnoreWord={handleIgnoreWord}
         mode={mode}
         theme={theme}
       />
-    )
+    );
   }, [
     dataEnd,
     handleDeleteWord,
+    handleIgnoreWord,
     loading,
     mode,
     theme,
     word,
     wordLocalInfoOuter,
-  ])
+  ]);
 
   const toolbarButtonStyle: React.CSSProperties = {
     width: '30px',
@@ -155,7 +202,7 @@ export default function HoverTooltip({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 0,
-  }
+  };
 
   return (
     <div
@@ -193,9 +240,15 @@ export default function HoverTooltip({
         <button
           type='button'
           aria-label={
-            themeName === 'dark' ? '切换到亮色' : '切换到暗色'
+            themeName === 'dark'
+              ? '切换到亮色'
+              : '切换到暗色'
           }
-          title={themeName === 'dark' ? '切换到亮色' : '切换到暗色'}
+          title={
+            themeName === 'dark'
+              ? '切换到亮色'
+              : '切换到暗色'
+          }
           onClick={toggleTheme}
           style={toolbarButtonStyle}
         >
@@ -205,12 +258,15 @@ export default function HoverTooltip({
           type='button'
           aria-label='关闭翻译卡片'
           onClick={onClose}
-          style={{ ...toolbarButtonStyle, fontSize: '18px' }}
+          style={{
+            ...toolbarButtonStyle,
+            fontSize: '18px',
+          }}
         >
           ×
         </button>
       </div>
       {panelContent}
     </div>
-  )
+  );
 }

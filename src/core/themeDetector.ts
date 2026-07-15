@@ -1,4 +1,4 @@
-import { isWebsiteDarkMode } from './storageManager'
+import { isWebsiteDarkMode } from './storageManager';
 
 /**
  * 检测网页是否处于暗黑模式
@@ -7,9 +7,11 @@ import { isWebsiteDarkMode } from './storageManager'
 export function isDarkMode(): boolean {
   // 检查系统级别的暗黑模式设置
   if (typeof window !== 'undefined' && window.matchMedia) {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const darkModeMediaQuery = window.matchMedia(
+      '(prefers-color-scheme: dark)',
+    );
     if (darkModeMediaQuery.matches) {
-      return true
+      return true;
     }
   }
 
@@ -19,47 +21,52 @@ export function isDarkMode(): boolean {
     'dark-mode',
     'darkmode',
     'night',
-    'night-mode'
-  ]
-  
+    'night-mode',
+  ];
+
   // 检查body或html元素是否有暗黑模式类
-  const body = document.body
-  const html = document.documentElement
-  
+  const body = document.body;
+  const html = document.documentElement;
+
   for (const className of darkModeClasses) {
-    if (body.classList.contains(className) || html.classList.contains(className)) {
-      return true
+    if (
+      body.classList.contains(className) ||
+      html.classList.contains(className)
+    ) {
+      return true;
     }
   }
-  
+
   // 检查是否有明显的暗色背景
-  const bodyBgColor = window.getComputedStyle(body).backgroundColor
-  const htmlBgColor = window.getComputedStyle(html).backgroundColor
-  
+  const bodyBgColor =
+    window.getComputedStyle(body).backgroundColor;
+  const htmlBgColor =
+    window.getComputedStyle(html).backgroundColor;
+
   // 简单的颜色亮度检测
-  const isBodyDark = isColorDark(bodyBgColor)
-  const isHtmlDark = isColorDark(htmlBgColor)
-  
+  const isBodyDark = isColorDark(bodyBgColor);
+  const isHtmlDark = isColorDark(htmlBgColor);
+
   if (isBodyDark || isHtmlDark) {
-    return true
+    return true;
   }
-  
-  return false
+
+  return false;
 }
 
 /**
  * 更新网站主题模式到存储
  */
 export async function updateWebsiteDarkMode(): Promise<void> {
-  const isDark = isDarkMode()
-  await isWebsiteDarkMode.setValue(isDark)
+  const isDark = isDarkMode();
+  await isWebsiteDarkMode.setValue(isDark);
 }
 
 /**
  * 获取当前存储的网站主题模式
  */
 export async function getCurrentWebsiteDarkMode(): Promise<boolean> {
-  return await isWebsiteDarkMode.getValue()
+  return await isWebsiteDarkMode.getValue();
 }
 
 /**
@@ -68,29 +75,31 @@ export async function getCurrentWebsiteDarkMode(): Promise<boolean> {
 export function initThemeObserver(): void {
   // 监听系统主题变化
   if (typeof window !== 'undefined' && window.matchMedia) {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const darkModeMediaQuery = window.matchMedia(
+      '(prefers-color-scheme: dark)',
+    );
     darkModeMediaQuery.addEventListener('change', () => {
-      updateWebsiteDarkMode().catch(console.error)
-    })
+      updateWebsiteDarkMode().catch(console.error);
+    });
   }
 
   // 监听DOM类名变化
   const observer = new MutationObserver(() => {
-    updateWebsiteDarkMode().catch(console.error)
-  })
+    updateWebsiteDarkMode().catch(console.error);
+  });
 
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ['class']
-  })
-  
+    attributeFilter: ['class'],
+  });
+
   observer.observe(document.body, {
     attributes: true,
-    attributeFilter: ['class']
-  })
+    attributeFilter: ['class'],
+  });
 
   // 初始化时更新一次
-  updateWebsiteDarkMode().catch(console.error)
+  updateWebsiteDarkMode().catch(console.error);
 }
 
 /**
@@ -99,39 +108,44 @@ export function initThemeObserver(): void {
  * @returns boolean - true表示暗色，false表示亮色
  */
 function isColorDark(color: string): boolean {
-  if (!color) return false
-  
+  if (!color) return false;
+
   // 处理rgb格式
   if (color.startsWith('rgb')) {
-    const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+    const match = color.match(
+      /rgba?\((\d+),\s*(\d+),\s*(\d+)/,
+    );
     if (match) {
-      const r = parseInt(match[1])
-      const g = parseInt(match[2])
-      const b = parseInt(match[3])
+      const r = parseInt(match[1], 10);
+      const g = parseInt(match[2], 10);
+      const b = parseInt(match[3], 10);
       // 使用亮度公式计算亮度: (0.299*R + 0.587*G + 0.114*B)
-      const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255
-      return brightness < 0.5
+      const brightness =
+        (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+      return brightness < 0.5;
     }
   }
-  
+
   // 处理十六进制格式
   if (color.startsWith('#')) {
-    const hex = color.replace('#', '')
+    const hex = color.replace('#', '');
     if (hex.length === 3) {
-      const r = parseInt(hex[0] + hex[0], 16)
-      const g = parseInt(hex[1] + hex[1], 16)
-      const b = parseInt(hex[2] + hex[2], 16)
-      const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255
-      return brightness < 0.5
+      const r = parseInt(hex[0] + hex[0], 16);
+      const g = parseInt(hex[1] + hex[1], 16);
+      const b = parseInt(hex[2] + hex[2], 16);
+      const brightness =
+        (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+      return brightness < 0.5;
     } else if (hex.length === 6) {
-      const r = parseInt(hex.substring(0, 2), 16)
-      const g = parseInt(hex.substring(2, 4), 16)
-      const b = parseInt(hex.substring(4, 6), 16)
-      const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255
-      return brightness < 0.5
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const brightness =
+        (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+      return brightness < 0.5;
     }
   }
-  
+
   // 默认返回false
-  return false
+  return false;
 }

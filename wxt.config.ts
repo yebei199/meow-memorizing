@@ -32,8 +32,7 @@ export default defineConfig({
       'https://wxt.dev/guide/introduction.html',
       'https://github.com/trending?since=daily',
     ],
-    // NixOS: Chrome requires --no-sandbox in a sandboxed environment.
-    chromiumArgs: ['--no-sandbox'],
+    chromiumArgs: [],
   },
   zip: {
     excludeSources: [

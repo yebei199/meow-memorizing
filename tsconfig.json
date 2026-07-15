@@ -6,9 +6,5 @@
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true
   },
-  "exclude": [
-    ".output",
-    "node_modules",
-    "tests/e2e"
-  ]
+  "exclude": [".output", "node_modules", "tests/e2e"]
 }

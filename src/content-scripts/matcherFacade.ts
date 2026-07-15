@@ -18,6 +18,23 @@ let lastSig: string | null = null;
 // Serialises concurrent ensureWords callers (a chunk fires many in parallel).
 let syncInFlight: Promise<void> | null = null;
 
+/**
+ * A word is excluded from highlighting if it's memorized (isDeleted),
+ * a stopword (isIgnored), or has no known translation (isUntranslatable) —
+ * see CONTEXT.md and docs/adr/0001-split-word-lifecycle-states.md.
+ */
+function isExcluded(entry: {
+  isDeleted?: boolean;
+  isIgnored?: boolean;
+  isUntranslatable?: boolean;
+}): boolean {
+  return Boolean(
+    entry.isDeleted ||
+      entry.isIgnored ||
+      entry.isUntranslatable,
+  );
+}
+
 /** Order-independent signature of the active/deleted word sets. */
 function computeSig(wordsList: WordsList): string {
   const parts: string[] = [];
@@ -25,7 +42,7 @@ function computeSig(wordsList: WordsList): string {
     const entry = wordsList[key];
     if (!entry || typeof entry.word !== 'string') continue;
     parts.push(
-      `${entry.isDeleted ? '-' : '+'}${entry.word}`,
+      `${isExcluded(entry) ? '-' : '+'}${entry.word}`,
     );
   }
   parts.sort();
@@ -45,7 +62,7 @@ async function ensureWords(
       const entry = wordsList[key];
       if (!entry || typeof entry.word !== 'string')
         continue;
-      if (entry.isDeleted) deleted.push(entry.word);
+      if (isExcluded(entry)) deleted.push(entry.word);
       else active.push(entry.word);
     }
     syncInFlight = sendMessage('matcherSetWords', {

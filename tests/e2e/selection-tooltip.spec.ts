@@ -89,7 +89,7 @@ test('selecting a word immediately highlights all existing matches', async ({
   await h.close();
 });
 
-test('does not keep a highlight for a selected word without dictionary results', async ({
+test('silently closes the card for a selected word without dictionary results', async ({
   browser,
 }) => {
   const h = await setupBundleHarness(browser, {
@@ -113,13 +113,12 @@ test('does not keep a highlight for a selected word without dictionary results',
     'quizzacious',
   );
 
+  // No dictionary result marks the word isUntranslatable and closes the
+  // card silently — no "未找到翻译" text, the card just disappears.
   const tooltip = h.page.locator(
     '[data-meow-tooltip-root="selection"]',
   );
-  await expect(tooltip).toHaveCount(1, { timeout: 15000 });
-  await expect(tooltip).toBeVisible();
-  await expect(tooltip).toContainText('未找到翻译');
-  await expect(tooltip).toContainText('未收录');
+  await expect(tooltip).toHaveCount(0, { timeout: 15000 });
   await expect(
     h.page.locator('[data-word="quizzacious"]'),
   ).toHaveCount(0);
@@ -197,6 +196,99 @@ test('highlights and opens hover cards inside github-like inline links', async (
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('reddit');
   await expect(tooltip).toContainText('lucky discovery');
+
+  await h.close();
+});
+
+test('shows a retranslate dot for a stopword, and clicking it restores the tooltip (#140)', async ({
+  browser,
+}) => {
+  const h = await setupBundleHarness(browser, {
+    url: 'http://127.0.0.1:5199/sample.html',
+    seedWords: {
+      hush: {
+        word: 'hush',
+        isDeleted: false,
+        queryTimes: 3,
+        deleteTimes: 0,
+        isIgnored: true,
+        isUntranslatable: false,
+        lastAttemptAt: 0,
+      },
+    },
+  });
+
+  await h.page.evaluate(() => {
+    const host = document.createElement('p');
+    host.id = 'stopword-target';
+    host.textContent = 'Stopword target: hush';
+    document.body.appendChild(host);
+  });
+
+  await h.page.waitForTimeout(STARTUP_MS);
+  await selectWord(h.page, '#stopword-target', 'hush');
+
+  // No translation card — a small retranslate dot instead.
+  const tooltip = h.page.locator(
+    '[data-meow-tooltip-root="selection"]',
+  );
+  await expect(tooltip).toHaveCount(0, { timeout: 15000 });
+  const dot = h.page.getByTitle('停用词，点击重新翻译');
+  await expect(dot).toBeVisible({ timeout: 15000 });
+
+  await dot.click();
+
+  // Clicking the dot un-ignores the word and reopens the normal card.
+  await expect(tooltip).toHaveCount(1, { timeout: 15000 });
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText('hush');
+
+  await h.close();
+});
+
+test('keeps the native selection intact after selecting a stopword (so copy still works)', async ({
+  browser,
+}) => {
+  const h = await setupBundleHarness(browser, {
+    url: 'http://127.0.0.1:5199/sample.html',
+    seedWords: {
+      hush: {
+        word: 'hush',
+        isDeleted: false,
+        queryTimes: 3,
+        deleteTimes: 0,
+        isIgnored: true,
+        isUntranslatable: false,
+        lastAttemptAt: 0,
+      },
+    },
+  });
+
+  await h.page.evaluate(() => {
+    const host = document.createElement('p');
+    host.id = 'copy-target';
+    host.textContent = 'Copy target: hush';
+    document.body.appendChild(host);
+  });
+
+  await h.page.waitForTimeout(STARTUP_MS);
+  await selectWord(h.page, '#copy-target', 'hush');
+
+  // Wait for the dot (or its absence) to settle before checking the selection.
+  await expect(
+    h.page.getByTitle('停用词，点击重新翻译'),
+  ).toBeVisible({ timeout: 15000 });
+
+  // A stopword's text node is excluded from highlighting, so the page
+  // rescan never replaces it — the native selection must survive, so the
+  // user can still Ctrl+C right after selecting it (see #140 follow-up).
+  // Selecting a word that DOES get highlighted still loses the native
+  // selection, because the rescan replaces its DOM node; that's pre-existing
+  // behavior this change doesn't attempt to fix.
+  const selectedText = await h.page.evaluate(() =>
+    window.getSelection()?.toString(),
+  );
+  expect(selectedText).toBe('hush');
 
   await h.close();
 });

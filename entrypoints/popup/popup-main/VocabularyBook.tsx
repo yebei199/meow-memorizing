@@ -1,28 +1,65 @@
-import { getWordsList } from '@/src/core/storageManager'
-import type { IAllWordsStorage, IWordStorage } from '@/src/core/types'
-import type { TableColumnsType } from 'antd'
-import { Button, Dropdown, Input, MenuProps, Table } from 'antd'
-import { useEffect, useState } from 'react'
-import { getCurrentWebsiteDarkMode, updateWebsiteDarkMode } from '@/src/core/themeDetector'
-import { DownOutlined } from '@ant-design/icons'
+import { DownOutlined } from '@ant-design/icons';
+import type { TableColumnsType } from 'antd';
+import {
+  Button,
+  Dropdown,
+  Input,
+  type MenuProps,
+  Table,
+  Tabs,
+} from 'antd';
+import { useCallback, useEffect, useState } from 'react';
+import { getWordsList } from '@/src/core/storageManager';
+import {
+  getCurrentWebsiteDarkMode,
+  updateWebsiteDarkMode,
+} from '@/src/core/themeDetector';
+import type { IAllWordsStorage } from '@/src/core/types';
+import {
+  restoreWord,
+  unignoreWord,
+} from '@/src/core/wordProcessor';
+
+/**
+ * 单词本三个标签页各自展示的子集：普通活跃词 / 已记住（isDeleted）/
+ * 停用词（isIgnored）。查无翻译（isUntranslatable）是系统临时态，不在
+ * 词汇书里展示，见 CONTEXT.md。
+ */
+type WordListMode = 'active' | 'memorized' | 'ignored';
 
 // 提取主题配置到组件外部，避免每次渲染都重新创建
 const getThemeConfig = (isDarkMode: boolean) => ({
   backgroundColor: isDarkMode ? '#1f1f1f' : '#ffffff',
-  textColor: isDarkMode ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)',
-  borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
+  textColor: isDarkMode
+    ? 'rgba(255, 255, 255, 0.85)'
+    : 'rgba(0, 0, 0, 0.85)',
+  borderColor: isDarkMode
+    ? 'rgba(255, 255, 255, 0.7)'
+    : 'rgba(0, 0, 0, 0.7)',
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-  inputBorder: isDarkMode ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(0, 0, 0, 0.3)',
-  inputBackground: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5',
-  inputTextColor: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+  inputBorder: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.3)'
+    : '1px solid rgba(0, 0, 0, 0.3)',
+  inputBackground: isDarkMode
+    ? 'rgba(255, 255, 255, 0.05)'
+    : '#f5f5f5',
+  inputTextColor: isDarkMode
+    ? 'rgba(255, 255, 255, 0.9)'
+    : 'rgba(0, 0, 0, 0.9)',
   headerBackground: isDarkMode ? '#1f1f1f' : '#ffffff',
   buttonBackground: isDarkMode ? '#000000' : '#ffffff',
   buttonHoverBackground: isDarkMode ? '#333333' : '#f0f0f0',
   buttonTextColor: isDarkMode ? '#ffffff' : '#000000', // 根据深色模式设置按钮文字颜色
-  paginationItemBackground: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5',
-  paginationItemHoverBackground: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : '#e0e0e0',
-  paginationItemActiveBackground: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : '#d0d0d0',
-})
+  paginationItemBackground: isDarkMode
+    ? 'rgba(255, 255, 255, 0.05)'
+    : '#f5f5f5',
+  paginationItemHoverBackground: isDarkMode
+    ? 'rgba(255, 255, 255, 0.1)'
+    : '#e0e0e0',
+  paginationItemActiveBackground: isDarkMode
+    ? 'rgba(255, 255, 255, 0.2)'
+    : '#d0d0d0',
+});
 
 // 提取样式计算函数，降低组件内部复杂度
 const getContainerStyle = (themeConfig: any) => ({
@@ -33,8 +70,8 @@ const getContainerStyle = (themeConfig: any) => ({
   backgroundColor: themeConfig.backgroundColor,
   color: themeConfig.textColor,
   minHeight: '100vh',
-  fontFamily: 'sans-serif'
-})
+  fontFamily: 'sans-serif',
+});
 
 // 顶部栏样式
 const getHeaderStyle = (themeConfig: any) => ({
@@ -44,7 +81,7 @@ const getHeaderStyle = (themeConfig: any) => ({
   marginBottom: '16px',
   paddingBottom: '12px',
   borderBottom: `1px solid ${themeConfig.borderColor}`,
-})
+});
 
 // 搜索框样式
 const getSearchStyle = (themeConfig: any) => ({
@@ -55,7 +92,7 @@ const getSearchStyle = (themeConfig: any) => ({
   borderRadius: '4px',
   outline: 'none',
   transition: 'all 0.3s ease',
-})
+});
 
 // 选项按钮样式
 const getOptionsBtnStyle = (themeConfig: any) => ({
@@ -65,13 +102,13 @@ const getOptionsBtnStyle = (themeConfig: any) => ({
   display: 'flex',
   alignItems: 'center',
   gap: '4px',
-})
+});
 
 // 添加新的样式函数
 const getTableHeaderStyle = (themeConfig: any) => ({
   background: themeConfig.headerBackground,
   color: themeConfig.textColor,
-})
+});
 
 const getTableStyle = (themeConfig: any) => ({
   width: '100%',
@@ -81,70 +118,81 @@ const getTableStyle = (themeConfig: any) => ({
   boxShadow: themeConfig.boxShadow,
   borderRadius: '8px',
   overflow: 'hidden',
-})
+});
 
 const getCellStyle = (themeConfig: any) => ({
   color: themeConfig.textColor,
   backgroundColor: themeConfig.backgroundColor,
   border: `1px solid ${themeConfig.borderColor}`,
   padding: '8px',
-})
+});
 
 export const VocabularyBook = () => {
   // 移除 console.log 降低复杂度
-  const defaultWords: IAllWordsStorage = {}
+  const defaultWords: IAllWordsStorage = {};
 
-  const [words, setWords] = useState<IAllWordsStorage>(defaultWords)
-  const [searchText, setSearchText] = useState('')
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [minQueryTimes, setMinQueryTimes] = useState<number | undefined>(undefined)
-  const [maxQueryTimes, setMaxQueryTimes] = useState<number | undefined>(undefined)
-  const [minDeleteTimes, setMinDeleteTimes] = useState<number | undefined>(undefined)
-  const [maxDeleteTimes, setMaxDeleteTimes] = useState<number | undefined>(undefined)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false) // 控制下拉菜单开关状态
+  const [words, setWords] =
+    useState<IAllWordsStorage>(defaultWords);
+  const [searchText, setSearchText] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [minQueryTimes, setMinQueryTimes] = useState<
+    number | undefined
+  >(undefined);
+  const [maxQueryTimes, setMaxQueryTimes] = useState<
+    number | undefined
+  >(undefined);
+  const [minDeleteTimes, setMinDeleteTimes] = useState<
+    number | undefined
+  >(undefined);
+  const [maxDeleteTimes, setMaxDeleteTimes] = useState<
+    number | undefined
+  >(undefined);
+  const [isDropdownOpen, setIsDropdownOpen] =
+    useState(false); // 控制下拉菜单开关状态
 
   // 检测系统主题
   useEffect(() => {
     const checkDarkMode = async () => {
       // 从存储中获取当前网站的颜色模式
-      const isDark = await getCurrentWebsiteDarkMode()
-      setIsDarkMode(isDark)
-    }
+      const isDark = await getCurrentWebsiteDarkMode();
+      setIsDarkMode(isDark);
+    };
 
-    checkDarkMode().catch(console.error)
-  }, [])
+    checkDarkMode().catch(console.error);
+  }, []);
 
   const toggleDarkMode = async () => {
-    const newMode = !isDarkMode
-    setIsDarkMode(newMode)
-    await updateWebsiteDarkMode()
-  }
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    await updateWebsiteDarkMode();
+  };
 
   const resetFilters = () => {
-    setMinQueryTimes(undefined)
-    setMaxQueryTimes(undefined)
-    setMinDeleteTimes(undefined)
-    setMaxDeleteTimes(undefined)
-  }
+    setMinQueryTimes(undefined);
+    setMaxQueryTimes(undefined);
+    setMinDeleteTimes(undefined);
+    setMaxDeleteTimes(undefined);
+  };
 
   const handleDropdownVisibleChange = (flag: boolean) => {
     // 只有当不是因为点击输入框而触发的关闭事件时，才更新下拉菜单状态
-    setIsDropdownOpen(flag)
-  }
+    setIsDropdownOpen(flag);
+  };
+
+  const refreshWords = useCallback(async () => {
+    try {
+      const words1 = await getWordsList();
+      if (words1) {
+        setWords(words1);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   useEffect(() => {
-    async function fetchWords() {
-      try {
-        const words1 = await getWordsList()
-        if (words1) {
-          setWords(words1)
-        }
-      } catch (e) {
-        console.error(e)
-      }
-    }
-    fetchWords().catch(console.error)
-  }, [])
+    refreshWords().catch(console.error);
+  }, [refreshWords]);
 
   // 定义下拉菜单项
   const items: MenuProps['items'] = [
@@ -152,7 +200,7 @@ export const VocabularyBook = () => {
       key: 'darkMode',
       label: (
         <Button
-          type="text"
+          type='text'
           onClick={toggleDarkMode}
           style={{
             width: '100%',
@@ -172,21 +220,39 @@ export const VocabularyBook = () => {
         <div>
           <div style={{ padding: '8px 0' }}>
             <div>查询次数筛选:</div>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                marginTop: '4px',
+              }}
+            >
               <Input
-                type="number"
-                placeholder="最小值"
+                type='number'
+                placeholder='最小值'
                 value={minQueryTimes ?? ''}
-                onChange={(e) => setMinQueryTimes(e.target.value ? parseInt(e.target.value) : undefined)}
+                onChange={(e) =>
+                  setMinQueryTimes(
+                    e.target.value
+                      ? parseInt(e.target.value, 10)
+                      : undefined,
+                  )
+                }
                 style={{ width: '80px' }}
                 onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
               />
               <span>-</span>
               <Input
-                type="number"
-                placeholder="最大值"
+                type='number'
+                placeholder='最大值'
                 value={maxQueryTimes ?? ''}
-                onChange={(e) => setMaxQueryTimes(e.target.value ? parseInt(e.target.value) : undefined)}
+                onChange={(e) =>
+                  setMaxQueryTimes(
+                    e.target.value
+                      ? parseInt(e.target.value, 10)
+                      : undefined,
+                  )
+                }
                 style={{ width: '80px' }}
                 onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
               />
@@ -194,21 +260,39 @@ export const VocabularyBook = () => {
           </div>
           <div style={{ padding: '8px 0' }}>
             <div>删除次数筛选:</div>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                marginTop: '4px',
+              }}
+            >
               <Input
-                type="number"
-                placeholder="最小值"
+                type='number'
+                placeholder='最小值'
                 value={minDeleteTimes ?? ''}
-                onChange={(e) => setMinDeleteTimes(e.target.value ? parseInt(e.target.value) : undefined)}
+                onChange={(e) =>
+                  setMinDeleteTimes(
+                    e.target.value
+                      ? parseInt(e.target.value, 10)
+                      : undefined,
+                  )
+                }
                 style={{ width: '80px' }}
                 onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
               />
               <span>-</span>
               <Input
-                type="number"
-                placeholder="最大值"
+                type='number'
+                placeholder='最大值'
                 value={maxDeleteTimes ?? ''}
-                onChange={(e) => setMaxDeleteTimes(e.target.value ? parseInt(e.target.value) : undefined)}
+                onChange={(e) =>
+                  setMaxDeleteTimes(
+                    e.target.value
+                      ? parseInt(e.target.value, 10)
+                      : undefined,
+                  )
+                }
                 style={{ width: '80px' }}
                 onClick={(e) => e.stopPropagation()} // 防止点击输入框时关闭下拉菜单
               />
@@ -216,10 +300,10 @@ export const VocabularyBook = () => {
           </div>
           <div style={{ padding: '8px 0' }}>
             <Button
-              type="primary"
+              type='primary'
               onClick={(e) => {
-                e.stopPropagation() // 防止点击按钮时关闭下拉菜单
-                resetFilters()
+                e.stopPropagation(); // 防止点击按钮时关闭下拉菜单
+                resetFilters();
               }}
               style={{ width: '100%' }}
             >
@@ -229,14 +313,14 @@ export const VocabularyBook = () => {
         </div>
       ),
     },
-  ]
+  ];
 
   // 使用统一的主题配置
-  const themeConfig = getThemeConfig(isDarkMode)
-  const containerStyle = getContainerStyle(themeConfig)
-  const headerStyle = getHeaderStyle(themeConfig)
-  const searchStyle = getSearchStyle(themeConfig)
-  const optionsBtnStyle = getOptionsBtnStyle(themeConfig)
+  const themeConfig = getThemeConfig(isDarkMode);
+  const containerStyle = getContainerStyle(themeConfig);
+  const headerStyle = getHeaderStyle(themeConfig);
+  const searchStyle = getSearchStyle(themeConfig);
+  const optionsBtnStyle = getOptionsBtnStyle(themeConfig);
 
   return (
     <div style={containerStyle}>
@@ -335,9 +419,16 @@ export const VocabularyBook = () => {
           }
         `}
       </style>
-      <div className="theme-provider">
+      <div className='theme-provider'>
         <div style={headerStyle}>
-          <h2 style={{ margin: 0, color: themeConfig.textColor }}>单词本</h2>
+          <h2
+            style={{
+              margin: 0,
+              color: themeConfig.textColor,
+            }}
+          >
+            单词本
+          </h2>
           <div>
             <Dropdown
               menu={{ items }}
@@ -352,62 +443,108 @@ export const VocabularyBook = () => {
           </div>
         </div>
         <Input.Search
-          placeholder="搜索单词"
+          placeholder='搜索单词'
           allowClear
           onChange={(e) => setSearchText(e.target.value)}
           style={searchStyle}
         />
         <div style={{ marginTop: '16px' }}>
-          <Sheet
-            wordsList={words}
-            searchText={searchText}
-            isDarkMode={isDarkMode}
-            themeConfig={themeConfig}
-            minQueryTimes={minQueryTimes}
-            maxQueryTimes={maxQueryTimes}
-            minDeleteTimes={minDeleteTimes}
-            maxDeleteTimes={maxDeleteTimes}
+          <Tabs
+            items={(
+              [
+                { key: 'active', label: '单词本' },
+                { key: 'memorized', label: '已记住' },
+                { key: 'ignored', label: '停用词' },
+              ] as const
+            ).map(({ key, label }) => ({
+              key,
+              label,
+              children: (
+                <Sheet
+                  mode={key}
+                  wordsList={words}
+                  searchText={searchText}
+                  isDarkMode={isDarkMode}
+                  themeConfig={themeConfig}
+                  minQueryTimes={minQueryTimes}
+                  maxQueryTimes={maxQueryTimes}
+                  minDeleteTimes={minDeleteTimes}
+                  maxDeleteTimes={maxDeleteTimes}
+                  onWordsChanged={refreshWords}
+                />
+              ),
+            }))}
           />
         </div>
       </div>
     </div>
-  )
+  );
+};
+
+/** 三个标签页各自的筛选条件：普通词排除已记住/停用词，其余两个标签各自只看自己的状态。 */
+function matchesMode(
+  entry: IAllWordsStorage[string],
+  mode: WordListMode,
+): boolean {
+  switch (mode) {
+    case 'memorized':
+      return entry.isDeleted;
+    case 'ignored':
+      return Boolean(entry.isIgnored);
+    default:
+      return !entry.isDeleted && !entry.isIgnored;
+  }
 }
 
 // 提取处理单词列表的逻辑到单独的函数中
-const processWordsList = (
+export const processWordsList = (
   wordsList: IAllWordsStorage,
   searchText: string,
   minQueryTimes?: number,
   maxQueryTimes?: number,
   minDeleteTimes?: number,
-  maxDeleteTimes?: number
+  maxDeleteTimes?: number,
+  mode: WordListMode = 'active',
 ) => {
   return Object.keys(wordsList)
     .filter((key) => {
-      const word = wordsList[key].word.toLowerCase()
-      const searchMatch = word.includes(searchText.toLowerCase())
+      const word = wordsList[key].word.toLowerCase();
+      const searchMatch = word.includes(
+        searchText.toLowerCase(),
+      );
 
-      const queryTimes = wordsList[key].queryTimes
-      const deleteTimes = wordsList[key].deleteTimes
+      const queryTimes = wordsList[key].queryTimes;
+      const deleteTimes = wordsList[key].deleteTimes;
 
-      const queryTimesMatch = (minQueryTimes === undefined || queryTimes >= minQueryTimes) &&
-                             (maxQueryTimes === undefined || queryTimes <= maxQueryTimes)
+      const queryTimesMatch =
+        (minQueryTimes === undefined ||
+          queryTimes >= minQueryTimes) &&
+        (maxQueryTimes === undefined ||
+          queryTimes <= maxQueryTimes);
 
-      const deleteTimesMatch = (minDeleteTimes === undefined || deleteTimes >= minDeleteTimes) &&
-                              (maxDeleteTimes === undefined || deleteTimes <= maxDeleteTimes)
+      const deleteTimesMatch =
+        (minDeleteTimes === undefined ||
+          deleteTimes >= minDeleteTimes) &&
+        (maxDeleteTimes === undefined ||
+          deleteTimes <= maxDeleteTimes);
 
-      return searchMatch && queryTimesMatch && deleteTimesMatch && !wordsList[key].isDeleted
+      return (
+        searchMatch &&
+        queryTimesMatch &&
+        deleteTimesMatch &&
+        matchesMode(wordsList[key], mode)
+      );
     })
     .map((i) => ({
       key: i,
       word: wordsList[i].word,
       queryTimes: wordsList[i].queryTimes,
       deleteTimes: wordsList[i].deleteTimes,
-    }))
-}
+    }));
+};
 
 function Sheet({
+  mode,
   wordsList,
   searchText,
   isDarkMode,
@@ -415,33 +552,58 @@ function Sheet({
   minQueryTimes,
   maxQueryTimes,
   minDeleteTimes,
-  maxDeleteTimes
+  maxDeleteTimes,
+  onWordsChanged,
 }: {
-  wordsList: IAllWordsStorage
-  searchText: string
-  isDarkMode: boolean
-  themeConfig: any
-  minQueryTimes?: number
-  maxQueryTimes?: number
-  minDeleteTimes?: number
-  maxDeleteTimes?: number
+  mode: WordListMode;
+  wordsList: IAllWordsStorage;
+  searchText: string;
+  isDarkMode: boolean;
+  themeConfig: any;
+  minQueryTimes?: number;
+  maxQueryTimes?: number;
+  minDeleteTimes?: number;
+  maxDeleteTimes?: number;
+  onWordsChanged: () => void;
 }) {
-  const [showWords, setShowWords] = useState<IShowWord[]>([])
+  const [showWords, setShowWords] = useState<IShowWord[]>(
+    [],
+  );
 
   useEffect(() => {
-    setShowWords(processWordsList(
-      wordsList,
-      searchText,
-      minQueryTimes,
-      maxQueryTimes,
-      minDeleteTimes,
-      maxDeleteTimes
-    ))
-  }, [wordsList, searchText, minQueryTimes, maxQueryTimes, minDeleteTimes, maxDeleteTimes])
+    setShowWords(
+      processWordsList(
+        wordsList,
+        searchText,
+        minQueryTimes,
+        maxQueryTimes,
+        minDeleteTimes,
+        maxDeleteTimes,
+        mode,
+      ),
+    );
+  }, [
+    wordsList,
+    searchText,
+    minQueryTimes,
+    maxQueryTimes,
+    minDeleteTimes,
+    maxDeleteTimes,
+    mode,
+  ]);
 
-  const tableStyle = getTableStyle(themeConfig)
-  const cellStyle = getCellStyle(themeConfig)
-  const headerStyle = getTableHeaderStyle(themeConfig) // 新增表头样式
+  const tableStyle = getTableStyle(themeConfig);
+  const cellStyle = getCellStyle(themeConfig);
+  const headerStyle = getTableHeaderStyle(themeConfig); // 新增表头样式
+
+  const handleRestore = async (word: string) => {
+    if (mode === 'memorized') {
+      await restoreWord(word);
+    } else if (mode === 'ignored') {
+      await unignoreWord(word);
+    }
+    onWordsChanged();
+  };
 
   const columns: TableColumnsType<IShowWord> = [
     {
@@ -480,7 +642,25 @@ function Sheet({
         style: headerStyle,
       }),
     },
-  ]
+    ...(mode === 'active'
+      ? []
+      : [
+          {
+            title: '操作',
+            key: 'actions',
+            onCell: () => ({ style: cellStyle }),
+            onHeaderCell: () => ({ style: headerStyle }),
+            render: (_: unknown, record: IShowWord) => (
+              <Button
+                size='small'
+                onClick={() => handleRestore(record.key)}
+              >
+                恢复
+              </Button>
+            ),
+          },
+        ]),
+  ];
 
   return (
     <div style={{ width: '100%' }}>
@@ -491,9 +671,9 @@ function Sheet({
           pageSize: 5,
           showQuickJumper: true,
           showSizeChanger: true,
-          size: 'small'
+          size: 'small',
         }}
-        className="custom-row-10"
+        className='custom-row-10'
         // 移除可能不存在的自定义类名，改用内联样式控制表格行高
         style={{ ...tableStyle, height: 'auto' }}
         rowClassName={() => 'vocabulary-table-row'}
@@ -515,12 +695,12 @@ function Sheet({
         }}
       />
     </div>
-  )
+  );
 }
 
 export interface IShowWord {
-  key: string
-  word: string
-  queryTimes: number
-  deleteTimes: number
+  key: string;
+  word: string;
+  queryTimes: number;
+  deleteTimes: number;
 }

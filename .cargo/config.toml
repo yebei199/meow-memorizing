@@ -7,8 +7,8 @@
 # index fetches. Unlike the Bevy-based reference project, this workspace has
 # no getrandom dependency, so no wasm32 getrandom backend flag is needed.
 
-[build]
-rustc-wrapper = "sccache"
+#[build]
+#rustc-wrapper = "sccache"
 
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"

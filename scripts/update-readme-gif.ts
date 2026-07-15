@@ -265,6 +265,9 @@ function word(wordText: string) {
     isDeleted: false,
     queryTimes: 1,
     deleteTimes: 0,
+    isIgnored: false,
+    isUntranslatable: false,
+    lastAttemptAt: 0,
   };
 }
 
