@@ -3,7 +3,10 @@
 // tooltip). Selection has no persistent element anchor, so it pins to the rect
 // of the selection captured at show time and dismisses on scroll / outside
 // click / Escape.
-import { dismissTooltip, showTooltip } from './tooltipManager';
+import {
+  dismissTooltip,
+  showTooltip,
+} from './tooltipManager';
 
 let selectionToken: number | null = null;
 

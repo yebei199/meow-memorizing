@@ -1,6 +1,10 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vitest/config';
+import { WxtVitest } from 'wxt/testing';
 
 export default defineConfig({
+  // WxtVitest 提供 wxt.config.ts 里声明的 @/ 路径别名解析、全局变量（如 storage/browser）
+  // 以及浏览器扩展 API 的 mock，测试 content-scripts/components 下依赖这些的代码需要它。
+  plugins: [WxtVitest()],
   test: {
     // 启用全局测试API，无需导入
     globals: true,
@@ -35,4 +39,4 @@ export default defineConfig({
     // 设置钩子函数的超时时间（毫秒）
     hookTimeout: 10000,
   },
-})
+});

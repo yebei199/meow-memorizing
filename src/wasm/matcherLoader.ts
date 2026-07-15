@@ -10,24 +10,24 @@ import {
   find_matches,
   initSync,
   set_words,
-} from './generated/matcher.js'
-import { wasmBytes } from './generated/matcher-inline'
+} from './generated/matcher.js';
+import { wasmBytes } from './generated/matcher-inline';
 
 /** One match, mirroring the JS `{ index, word, end }` contract. */
 export interface WasmMatch {
-  index: number
-  word: string
-  end: number
+  index: number;
+  word: string;
+  end: number;
 }
 
 /** Bound, type-safe surface over the wasm exports. */
 export interface WasmMatcher {
-  setWords(active: string[], deleted: string[]): void
-  findMatches(text: string): WasmMatch[]
-  findDeletedMatches(text: string): WasmMatch[]
+  setWords(active: string[], deleted: string[]): void;
+  findMatches(text: string): WasmMatch[];
+  findDeletedMatches(text: string): WasmMatch[];
 }
 
-let cached: WasmMatcher | undefined
+let cached: WasmMatcher | undefined;
 
 /**
  * Initialise the wasm matcher once and return it. Throws if WASM is
@@ -35,14 +35,15 @@ let cached: WasmMatcher | undefined
  * subsequent calls hit the cache.
  */
 export function ensureMatcher(): WasmMatcher {
-  if (cached !== undefined) return cached
-  initSync({ module: wasmBytes })
+  if (cached !== undefined) return cached;
+  initSync({ module: wasmBytes });
   cached = {
-    setWords: (active, deleted) => set_words(active, deleted),
+    setWords: (active, deleted) =>
+      set_words(active, deleted),
     findMatches: (text) =>
       find_matches(text) as WasmMatch[],
     findDeletedMatches: (text) =>
       find_deleted_matches(text) as WasmMatch[],
-  }
-  return cached
+  };
+  return cached;
 }

@@ -1,20 +1,22 @@
-import { addQueriedWord } from '@/src/core/wordProcessor'
-import { processPageWords } from './ergodicWords'
-import { showSelectionTooltip } from './selectionTooltip'
+import { addQueriedWord } from '@/src/core/wordProcessor';
+import { processPageWords } from './ergodicWords';
+import { showSelectionTooltip } from './selectionTooltip';
 
-const VALID_SELECTION_PATTERN = /^[a-zA-Z-]+$/
+const VALID_SELECTION_PATTERN = /^[a-zA-Z-]+$/;
 
-function normalizeSelectedWord(text: string): string | null {
-  const trimmed = text.trim()
+function normalizeSelectedWord(
+  text: string,
+): string | null {
+  const trimmed = text.trim();
   if (trimmed.length <= 2) {
-    return null
+    return null;
   }
 
   if (!VALID_SELECTION_PATTERN.test(trimmed)) {
-    return null
+    return null;
   }
 
-  return trimmed.toLowerCase()
+  return trimmed.toLowerCase();
 }
 
 /**
@@ -22,31 +24,31 @@ function normalizeSelectedWord(text: string): string | null {
  */
 export async function setupSelectionListener(): Promise<void> {
   document.addEventListener('mouseup', async (event) => {
-    const target = event.target
+    const target = event.target;
     if (
       target instanceof Element &&
       target.closest('[data-meow-ignore="true"]')
     ) {
-      return
+      return;
     }
 
-    const selection = window.getSelection()
-    if (!selection || selection.rangeCount < 1) return
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount < 1) return;
 
-    const range = selection.getRangeAt(0)
-    const word = normalizeSelectedWord(range.toString())
-    if (!word) return
+    const range = selection.getRangeAt(0);
+    const word = normalizeSelectedWord(range.toString());
+    if (!word) return;
 
-    const rect = range.getBoundingClientRect()
-    selection.removeAllRanges()
+    const rect = range.getBoundingClientRect();
+    selection.removeAllRanges();
 
-    await addQueriedWord(word)
-    await processPageWords()
+    await addQueriedWord(word);
+    await processPageWords();
 
     showSelectionTooltip({
       word,
       x: rect.left + rect.width / 2,
       y: rect.bottom,
-    })
-  })
+    });
+  });
 }

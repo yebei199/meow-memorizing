@@ -5,11 +5,11 @@ import {
   useRef,
   useState,
 } from 'react';
-import { queryWord } from '@/src/core/storageManager';
 import {
   dismissTooltip,
   showTooltip,
 } from '@/src/content-scripts/tooltipManager';
+import { queryWord } from '@/src/core/storageManager';
 
 interface WordHighlighterProps {
   originalWord: string;
@@ -106,7 +106,12 @@ function useMouseEvents(
       clearTimeout(timeoutId.current);
       timeoutId.current = null;
     }
-  }, [hasTriggered, isDeleted, setIsHovered, setHasTriggered]);
+  }, [
+    hasTriggered,
+    isDeleted,
+    setIsHovered,
+    setHasTriggered,
+  ]);
 
   const handleMouseLeave = useCallback(() => {
     if (hoverTimeoutId.current) {
@@ -145,8 +150,12 @@ function useTopLevelTooltip(
   isHovered: boolean,
   lowerCaseWord: string,
   anchorRef: React.RefObject<HTMLButtonElement | null>,
-  setIsHovered: React.Dispatch<React.SetStateAction<boolean>>,
-  setHasTriggered: React.Dispatch<React.SetStateAction<boolean>>,
+  setIsHovered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
+  setHasTriggered: React.Dispatch<
+    React.SetStateAction<boolean>
+  >,
 ) {
   const isPanelHovered = useRef(false);
   const hideTimeoutRef = useRef<number | null>(null);

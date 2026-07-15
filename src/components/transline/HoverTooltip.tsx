@@ -3,36 +3,32 @@ import {
   useEffect,
   useMemo,
   useState,
-} from 'react'
-import {
-  addWordLocal,
-} from '@/src/core/storageManager'
-import type { IWordStorage } from '@/src/core/types'
-import {
-  deleteWord,
-} from '@/src/core/wordProcessor'
+} from 'react';
+import { processPageWords } from '@/src/content-scripts/ergodicWords';
+import { addWordLocal } from '@/src/core/storageManager';
+import type { IWordStorage } from '@/src/core/types';
+import { deleteWord } from '@/src/core/wordProcessor';
 import {
   LoadedPanel,
   LoadingPanel,
-} from './PanelComponents'
+} from './PanelComponents';
 import {
   HAND_FONT,
   SKETCH_RADIUS,
-  type ThemeName,
   THEMES,
-} from './tooltipTheme'
+  type ThemeName,
+} from './tooltipTheme';
 import {
   CACHE_EXPIRY,
   fetchData,
   translationCache,
-} from './transUtils'
-import { processPageWords } from '@/src/content-scripts/ergodicWords'
+} from './transUtils';
 
 interface HoverTooltipProps {
-  word: string
-  mode?: 'stored' | 'selection'
-  onClose?: () => void
-  style?: React.CSSProperties
+  word: string;
+  mode?: 'stored' | 'selection';
+  onClose?: () => void;
+  style?: React.CSSProperties;
 }
 
 function fetchWordData(
@@ -54,7 +50,7 @@ function fetchWordData(
     translationCache,
     CACHE_EXPIRY,
     mode,
-  ).catch(console.error)
+  ).catch(console.error);
 }
 
 function useWordDelete(
@@ -63,21 +59,21 @@ function useWordDelete(
 ) {
   return useCallback(async () => {
     if (!wordLocalInfoOuter) {
-      return
+      return;
     }
 
-    onClose?.()
+    onClose?.();
 
     const event = new CustomEvent('deleteWord', {
       detail: wordLocalInfoOuter.word,
-    })
-    window.dispatchEvent(event)
+    });
+    window.dispatchEvent(event);
 
     setTimeout(async () => {
-      await deleteWord(wordLocalInfoOuter.word)
-      await processPageWords()
-    }, 10)
-  }, [onClose, wordLocalInfoOuter])
+      await deleteWord(wordLocalInfoOuter.word);
+      await processPageWords();
+    }, 10);
+  }, [onClose, wordLocalInfoOuter]);
 }
 
 /**
@@ -90,12 +86,13 @@ export default function HoverTooltip({
   style,
 }: HoverTooltipProps) {
   const [wordLocalInfoOuter, setWordLocalInfoOuter] =
-    useState<IWordStorage>()
-  const [dataEnd, setDataEnd] = useState('')
-  const [loading, setLoading] = useState(true)
+    useState<IWordStorage>();
+  const [dataEnd, setDataEnd] = useState('');
+  const [loading, setLoading] = useState(true);
   // Hand-drawn card defaults to dark mode; the top-right toggle flips it.
-  const [themeName, setThemeName] = useState<ThemeName>('dark')
-  const theme = THEMES[themeName]
+  const [themeName, setThemeName] =
+    useState<ThemeName>('dark');
+  const theme = THEMES[themeName];
 
   useEffect(() => {
     fetchWordData(
@@ -104,21 +101,23 @@ export default function HoverTooltip({
       setDataEnd,
       setLoading,
       setWordLocalInfoOuter,
-    )
-  }, [mode, word])
+    );
+  }, [mode, word]);
 
   const handleDeleteWord = useWordDelete(
     wordLocalInfoOuter,
     onClose,
-  )
+  );
 
   const toggleTheme = useCallback(() => {
-    setThemeName((prev) => (prev === 'dark' ? 'light' : 'dark'))
-  }, [])
+    setThemeName((prev) =>
+      prev === 'dark' ? 'light' : 'dark',
+    );
+  }, []);
 
   const panelContent = useMemo(() => {
     if (loading) {
-      return <LoadingPanel theme={theme} />
+      return <LoadingPanel theme={theme} />;
     }
 
     return (
@@ -130,7 +129,7 @@ export default function HoverTooltip({
         mode={mode}
         theme={theme}
       />
-    )
+    );
   }, [
     dataEnd,
     handleDeleteWord,
@@ -139,7 +138,7 @@ export default function HoverTooltip({
     theme,
     word,
     wordLocalInfoOuter,
-  ])
+  ]);
 
   const toolbarButtonStyle: React.CSSProperties = {
     width: '30px',
@@ -155,7 +154,7 @@ export default function HoverTooltip({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 0,
-  }
+  };
 
   return (
     <div
@@ -193,9 +192,15 @@ export default function HoverTooltip({
         <button
           type='button'
           aria-label={
-            themeName === 'dark' ? '切换到亮色' : '切换到暗色'
+            themeName === 'dark'
+              ? '切换到亮色'
+              : '切换到暗色'
           }
-          title={themeName === 'dark' ? '切换到亮色' : '切换到暗色'}
+          title={
+            themeName === 'dark'
+              ? '切换到亮色'
+              : '切换到暗色'
+          }
           onClick={toggleTheme}
           style={toolbarButtonStyle}
         >
@@ -205,12 +210,15 @@ export default function HoverTooltip({
           type='button'
           aria-label='关闭翻译卡片'
           onClick={onClose}
-          style={{ ...toolbarButtonStyle, fontSize: '18px' }}
+          style={{
+            ...toolbarButtonStyle,
+            fontSize: '18px',
+          }}
         >
           ×
         </button>
       </div>
       {panelContent}
     </div>
-  )
+  );
 }

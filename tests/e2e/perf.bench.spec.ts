@@ -23,9 +23,26 @@ import { expect, test } from '@playwright/test';
 // A node count and text shape that approximate a content-heavy article page.
 const NODE_COUNT = 600;
 const REAL_WORDS = [
-  'hello', 'world', 'word', 'language', 'memory', 'browser',
-  'extension', 'rust', 'match', 'text', 'scan', 'fast', 'every',
-  'this', 'page', 'node', 'wasm', 'token', 'vocabulary', 'learn',
+  'hello',
+  'world',
+  'word',
+  'language',
+  'memory',
+  'browser',
+  'extension',
+  'rust',
+  'match',
+  'text',
+  'scan',
+  'fast',
+  'every',
+  'this',
+  'page',
+  'node',
+  'wasm',
+  'token',
+  'vocabulary',
+  'learn',
 ];
 
 function wordList(): string[] {
@@ -51,7 +68,10 @@ test('attributes page-scan cost across wasm, messaging and DOM', async ({
 
   const result = await page.evaluate(
     async ({ words, nodeCount, sample }) => {
-      const texts = Array.from({ length: nodeCount }, () => sample);
+      const texts = Array.from(
+        { length: nodeCount },
+        () => sample,
+      );
 
       // ---- 1. WASM compute: scan every node with the real matcher. ----
       const mod = await import(
@@ -62,7 +82,8 @@ test('attributes page-scan cost across wasm, messaging and DOM', async ({
       const wasm0 = performance.now();
       let totalMatches = 0;
       for (const t of texts) {
-        totalMatches += (mod.find_matches(t) as unknown[]).length;
+        totalMatches += (mod.find_matches(t) as unknown[])
+          .length;
       }
       const wasmMs = performance.now() - wasm0;
 
@@ -86,7 +107,10 @@ test('attributes page-scan cost across wasm, messaging and DOM', async ({
         new Blob([workerSrc], { type: 'text/javascript' }),
       );
       const worker = new Worker(url);
-      const pending = new Map<number, (v: unknown) => void>();
+      const pending = new Map<
+        number,
+        (v: unknown) => void
+      >();
       worker.onmessage = (e: MessageEvent) => {
         const resolve = pending.get(e.data.id);
         if (resolve) {
@@ -95,7 +119,9 @@ test('attributes page-scan cost across wasm, messaging and DOM', async ({
         }
       };
       let seq = 0;
-      const send = (payload: Record<string, unknown>): Promise<unknown> =>
+      const send = (
+        payload: Record<string, unknown>,
+      ): Promise<unknown> =>
         new Promise((resolve) => {
           const id = ++seq;
           pending.set(id, resolve);
@@ -107,7 +133,9 @@ test('attributes page-scan cost across wasm, messaging and DOM', async ({
       const perNode0 = performance.now();
       for (let i = 0; i < texts.length; i += 50) {
         const chunk = texts.slice(i, i + 50);
-        await Promise.all(chunk.map((text) => send({ text })));
+        await Promise.all(
+          chunk.map((text) => send({ text })),
+        );
       }
       const perNodeMs = performance.now() - perNode0;
 
@@ -139,13 +167,16 @@ test('attributes page-scan cost across wasm, messaging and DOM', async ({
         const fragment = document.createDocumentFragment();
         // Wrap each occurrence of a real word (mirrors per-match span creation).
         let last = 0;
-        const re = /\b(hello|world|rust|browser|extension|text|memory|page|node|word)\b/g;
+        const re =
+          /\b(hello|world|rust|browser|extension|text|memory|page|node|word)\b/g;
         let m: RegExpExecArray | null;
         // biome-ignore lint/suspicious/noAssignInExpressions: tight scan loop
         while ((m = re.exec(text)) !== null) {
           if (m.index > last) {
             fragment.appendChild(
-              document.createTextNode(text.slice(last, m.index)),
+              document.createTextNode(
+                text.slice(last, m.index),
+              ),
             );
           }
           const span = document.createElement('span');
@@ -178,7 +209,11 @@ test('attributes page-scan cost across wasm, messaging and DOM', async ({
         domMs,
       };
     },
-    { words: wordList(), nodeCount: NODE_COUNT, sample: nodeText() },
+    {
+      words: wordList(),
+      nodeCount: NODE_COUNT,
+      sample: nodeText(),
+    },
   );
 
   expect(result.totalMatches).toBeGreaterThan(0);
@@ -194,7 +229,10 @@ test('attributes page-scan cost across wasm, messaging and DOM', async ({
   ];
   // Surface the breakdown both in the report and the run log.
   for (const line of lines) {
-    test.info().annotations.push({ type: 'perf', description: line });
+    test.info().annotations.push({
+      type: 'perf',
+      description: line,
+    });
   }
   console.log(`\n[perf]\n${lines.join('\n')}\n`);
 });

@@ -22,7 +22,11 @@ export async function processPageWords(): Promise<void> {
     const textNodes = getAllTextNodes();
 
     // 分块处理文本节点，避免阻塞主线程
-    await processTextNodesInChunks(textNodes, wordsList, 50);
+    await processTextNodesInChunks(
+      textNodes,
+      wordsList,
+      50,
+    );
   } catch (error) {
     console.error('处理页面单词时出错:', error);
   }
@@ -37,19 +41,23 @@ export async function processPageWords(): Promise<void> {
 async function processTextNodesInChunks(
   textNodes: Text[],
   wordsList: Record<string, any>,
-  chunkSize: number
+  chunkSize: number,
 ): Promise<void> {
   for (let i = 0; i < textNodes.length; i += chunkSize) {
     const chunk = textNodes.slice(i, i + chunkSize);
-    
+
     // 处理当前块
-    const promises = chunk.map(textNode => 
-      processTextNode(textNode, wordsList, findMatchingWords)
+    const promises = chunk.map((textNode) =>
+      processTextNode(
+        textNode,
+        wordsList,
+        findMatchingWords,
+      ),
     );
     await Promise.all(promises);
-    
+
     // 让出控制权给浏览器，防止阻塞UI
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       if (typeof requestIdleCallback !== 'undefined') {
         requestIdleCallback(() => resolve(undefined));
       } else {

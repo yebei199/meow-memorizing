@@ -1,3 +1,3 @@
-export * from './textProcessor';
-export * from './matcherFacade';
 export * from './domUtils';
+export * from './matcherFacade';
+export * from './textProcessor';

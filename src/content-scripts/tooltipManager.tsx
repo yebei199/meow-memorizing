@@ -82,7 +82,11 @@ function onResize(): void {
 function onPointerDown(event: MouseEvent): void {
   if (!active?.dismissOnOutside) return;
   const target = event.target;
-  if (host && target instanceof Node && host.contains(target)) {
+  if (
+    host &&
+    target instanceof Node &&
+    host.contains(target)
+  ) {
     return;
   }
   dismissTooltip(active.token);
@@ -99,7 +103,11 @@ function bindDocHandlers(): void {
   docHandlersBound = true;
   window.addEventListener('scroll', onScroll, true);
   window.addEventListener('resize', onResize, true);
-  document.addEventListener('mousedown', onPointerDown, true);
+  document.addEventListener(
+    'mousedown',
+    onPointerDown,
+    true,
+  );
   window.addEventListener('keydown', onKeyDown, true);
 }
 
@@ -108,7 +116,11 @@ function unbindDocHandlers(): void {
   docHandlersBound = false;
   window.removeEventListener('scroll', onScroll, true);
   window.removeEventListener('resize', onResize, true);
-  document.removeEventListener('mousedown', onPointerDown, true);
+  document.removeEventListener(
+    'mousedown',
+    onPointerDown,
+    true,
+  );
   window.removeEventListener('keydown', onKeyDown, true);
 }
 
@@ -139,7 +151,9 @@ function detachPointerCbs(): void {
 }
 
 /** Show a tooltip, displacing any current one. Returns its dismissal token. */
-export function showTooltip(opts: ShowTooltipOptions): number {
+export function showTooltip(
+  opts: ShowTooltipOptions,
+): number {
   ensureHost();
 
   // Displace the current tooltip and let its owner reset before we take over.
@@ -183,7 +197,8 @@ export function showTooltip(opts: ShowTooltipOptions): number {
  * is ignored, so late owner cleanups can safely call this.
  */
 export function dismissTooltip(token?: number): void {
-  if (token !== undefined && token !== active?.token) return;
+  if (token !== undefined && token !== active?.token)
+    return;
   const owner = active?.onDismiss;
   active = null;
   detachPointerCbs();
