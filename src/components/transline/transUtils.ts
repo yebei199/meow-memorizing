@@ -77,7 +77,7 @@ export async function fetchData(
 ) {
   const wordLocalInfo = await queryWord(word);
   if (mode === 'stored') {
-    if (wordLocalInfo && wordLocalInfo.isDeleted) {
+    if (wordLocalInfo?.isDeleted) {
       setWordLocalInfoOuter(wordLocalInfo);
       setDataEnd('该单词已被删除，不再显示翻译');
       setLoading(false);
