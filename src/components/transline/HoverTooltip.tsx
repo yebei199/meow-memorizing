@@ -7,7 +7,11 @@ import {
 import { processPageWords } from '@/src/content-scripts/ergodicWords';
 import { addWordLocal } from '@/src/core/storageManager';
 import type { IWordStorage } from '@/src/core/types';
-import { deleteWord } from '@/src/core/wordProcessor';
+import {
+  deleteWord,
+  ignoreWord,
+  markUntranslatable,
+} from '@/src/core/wordProcessor';
 import {
   LoadedPanel,
   LoadingPanel,
@@ -39,6 +43,7 @@ function fetchWordData(
   setWordLocalInfoOuter: (
     info: IWordStorage | undefined,
   ) => void,
+  onUntranslatable: () => void,
 ): void {
   fetchData(
     word,
@@ -46,7 +51,8 @@ function fetchWordData(
     setLoading,
     setWordLocalInfoOuter,
     addWordLocal,
-    deleteWord,
+    markUntranslatable,
+    onUntranslatable,
     translationCache,
     CACHE_EXPIRY,
     mode,
@@ -77,6 +83,39 @@ function useWordDelete(
 }
 
 /**
+ * 停用词是全新的独立状态（永不翻译），与「移除单词/已记住」互不影响；
+ * 需要二次确认，防止误触。确认后复用 deleteWord 事件让页面上已挂载的
+ * 高亮实例立即隐藏，无需等下一次整页扫描。
+ */
+function useWordIgnore(
+  wordLocalInfoOuter: IWordStorage | undefined,
+  onClose?: () => void,
+) {
+  return useCallback(async () => {
+    if (!wordLocalInfoOuter) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `将 "${wordLocalInfoOuter.word}" 设为停用词？以后选中它不会再弹出翻译面板，出现小圆点时点击即可恢复。`,
+    );
+    if (!confirmed) return;
+
+    onClose?.();
+
+    const event = new CustomEvent('deleteWord', {
+      detail: wordLocalInfoOuter.word,
+    });
+    window.dispatchEvent(event);
+
+    setTimeout(async () => {
+      await ignoreWord(wordLocalInfoOuter.word);
+      await processPageWords();
+    }, 10);
+  }, [onClose, wordLocalInfoOuter]);
+}
+
+/**
  * Render a translation card for a saved or transient selection word.
  */
 export default function HoverTooltip({
@@ -101,10 +140,15 @@ export default function HoverTooltip({
       setDataEnd,
       setLoading,
       setWordLocalInfoOuter,
+      () => onClose?.(),
     );
-  }, [mode, word]);
+  }, [mode, word, onClose]);
 
   const handleDeleteWord = useWordDelete(
+    wordLocalInfoOuter,
+    onClose,
+  );
+  const handleIgnoreWord = useWordIgnore(
     wordLocalInfoOuter,
     onClose,
   );
@@ -126,6 +170,7 @@ export default function HoverTooltip({
         dataEnd={dataEnd}
         wordLocalInfoOuter={wordLocalInfoOuter}
         handleDeleteWord={handleDeleteWord}
+        handleIgnoreWord={handleIgnoreWord}
         mode={mode}
         theme={theme}
       />
@@ -133,6 +178,7 @@ export default function HoverTooltip({
   }, [
     dataEnd,
     handleDeleteWord,
+    handleIgnoreWord,
     loading,
     mode,
     theme,
