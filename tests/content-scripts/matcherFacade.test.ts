@@ -1,7 +1,7 @@
 import { beforeEach, describe, it, vi } from 'vitest';
 import type { IWordStorage } from '../../src/core/types';
 
-const sendMessage = vi.fn(async (type: string) => {
+const sendMessage = vi.fn(async (type: string, _data?: unknown) => {
   if (
     type === 'matcherFindMatches' ||
     type === 'matcherFindDeleted'
@@ -11,8 +11,8 @@ const sendMessage = vi.fn(async (type: string) => {
 });
 
 vi.mock('../../src/core/messaging', () => ({
-  sendMessage: (...args: [string, unknown]) =>
-    sendMessage(...args),
+  sendMessage: (type: string, data?: unknown) =>
+    sendMessage(type, data),
 }));
 
 function _makeWord(
