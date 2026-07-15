@@ -159,6 +159,30 @@ export function shouldRetryTranslation(
   );
 }
 
+/** 鼠标选中一个词后，翻译面板/提示点应该怎么反应。 */
+export type SelectionAction =
+  | 'showDot'
+  | 'silent'
+  | 'showTooltip';
+
+/**
+ * 停用词：选中时改为出重译提示点，不弹面板。
+ * 冷却期内的查无翻译词：完全静默，什么都不出现。
+ * 其余情况（含已记住、普通词）：照常弹出翻译面板。
+ */
+export function decideSelectionAction(
+  wordInfo: IWordStorage | undefined,
+): SelectionAction {
+  if (wordInfo?.isIgnored) return 'showDot';
+  if (
+    wordInfo?.isUntranslatable &&
+    !shouldRetryTranslation(wordInfo)
+  ) {
+    return 'silent';
+  }
+  return 'showTooltip';
+}
+
 /**
  * 延迟执行函数
  */

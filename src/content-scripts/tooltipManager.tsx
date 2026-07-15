@@ -28,6 +28,12 @@ export interface ShowTooltipOptions {
   onDismiss?: () => void;
   onHostPointerEnter?: () => void;
   onHostPointerLeave?: () => void;
+  /**
+   * Renders something other than the default translation card (e.g. the
+   * stopword retranslate dot) through the same shared host/dismiss
+   * lifecycle. Receives a dismiss callback bound to this show's token.
+   */
+  render?: (dismiss: () => void) => React.ReactNode;
 }
 
 interface ActiveTooltip {
@@ -183,11 +189,15 @@ export function showTooltip(
   bindDocHandlers();
   reposition();
   root?.render(
-    <HoverTooltip
-      word={opts.word}
-      mode={opts.mode}
-      onClose={() => dismissTooltip(token)}
-    />,
+    opts.render ? (
+      opts.render(() => dismissTooltip(token))
+    ) : (
+      <HoverTooltip
+        word={opts.word}
+        mode={opts.mode}
+        onClose={() => dismissTooltip(token)}
+      />
+    ),
   );
   return token;
 }

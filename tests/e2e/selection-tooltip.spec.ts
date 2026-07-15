@@ -89,7 +89,7 @@ test('selecting a word immediately highlights all existing matches', async ({
   await h.close();
 });
 
-test('does not keep a highlight for a selected word without dictionary results', async ({
+test('silently closes the card for a selected word without dictionary results', async ({
   browser,
 }) => {
   const h = await setupBundleHarness(browser, {
@@ -113,13 +113,12 @@ test('does not keep a highlight for a selected word without dictionary results',
     'quizzacious',
   );
 
+  // No dictionary result marks the word isUntranslatable and closes the
+  // card silently — no "未找到翻译" text, the card just disappears.
   const tooltip = h.page.locator(
     '[data-meow-tooltip-root="selection"]',
   );
-  await expect(tooltip).toHaveCount(1, { timeout: 15000 });
-  await expect(tooltip).toBeVisible();
-  await expect(tooltip).toContainText('未找到翻译');
-  await expect(tooltip).toContainText('未收录');
+  await expect(tooltip).toHaveCount(0, { timeout: 15000 });
   await expect(
     h.page.locator('[data-word="quizzacious"]'),
   ).toHaveCount(0);

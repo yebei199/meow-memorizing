@@ -1,6 +1,13 @@
-import { addQueriedWord } from '@/src/core/wordProcessor';
+import { queryWord } from '@/src/core/storageManager';
+import {
+  addQueriedWord,
+  decideSelectionAction,
+} from '@/src/core/wordProcessor';
 import { processPageWords } from './ergodicWords';
-import { showSelectionTooltip } from './selectionTooltip';
+import {
+  showRetranslateDot,
+  showSelectionTooltip,
+} from './selectionTooltip';
 
 const VALID_SELECTION_PATTERN = /^[a-zA-Z-]+$/;
 
@@ -45,10 +52,23 @@ export async function setupSelectionListener(): Promise<void> {
     await addQueriedWord(word);
     await processPageWords();
 
-    showSelectionTooltip({
+    const position = {
       word,
       x: rect.left + rect.width / 2,
       y: rect.bottom,
-    });
+    };
+
+    // 停用词出重译提示点而不是面板；冷却期内的查无翻译词完全静默；
+    // 其余情况（含已记住、普通词）照常弹出翻译面板。
+    switch (decideSelectionAction(await queryWord(word))) {
+      case 'showDot':
+        showRetranslateDot(position);
+        break;
+      case 'silent':
+        break;
+      case 'showTooltip':
+        showSelectionTooltip(position);
+        break;
+    }
   });
 }

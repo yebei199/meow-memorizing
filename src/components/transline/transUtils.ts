@@ -69,6 +69,7 @@ export async function fetchData(
   addWordLocal: (info: any) => Promise<void>,
   markUntranslatable: (word: string) => Promise<void>,
   onUntranslatable: () => void,
+  clearUntranslatable: (word: string) => Promise<void>,
   translationCache: Map<
     string,
     { data: string; timestamp: number }
@@ -112,6 +113,7 @@ export async function fetchData(
     addWordLocal,
     markUntranslatable,
     onUntranslatable,
+    clearUntranslatable,
     translationCache,
   );
 }
@@ -168,6 +170,7 @@ async function fetchAndProcessNetworkData(
   addWordLocal: (info: any) => Promise<void>,
   markUntranslatable: (word: string) => Promise<void>,
   onUntranslatable: () => void,
+  clearUntranslatable: (word: string) => Promise<void>,
   translationCache: Map<
     string,
     { data: string; timestamp: number }
@@ -203,6 +206,9 @@ async function fetchAndProcessNetworkData(
     translationCache.set(word, cacheEntry);
     setDataEnd(definition);
     setLoading(false);
+    // 冷却重试后翻译成功：清除查无翻译标记，恢复该词的正常高亮/弹窗。
+    // 对从未被标记过的词是安全的空操作（见 clearUntranslatable 自身的判空）。
+    await clearUntranslatable(normalizedWord);
   } catch (error) {
     console.error('获取翻译失败:', error);
     await handleUntranslatable();

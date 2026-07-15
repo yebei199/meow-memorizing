@@ -73,6 +73,7 @@ function makeDeps() {
     addWordLocal: vi.fn(async () => undefined),
     markUntranslatable: vi.fn(async () => undefined),
     onUntranslatable: vi.fn(),
+    clearUntranslatable: vi.fn(async () => undefined),
     translationCache: new Map<
       string,
       { data: string; timestamp: number }
@@ -93,6 +94,7 @@ async function callFetchData(
     deps.addWordLocal,
     deps.markUntranslatable,
     deps.onUntranslatable,
+    deps.clearUntranslatable,
     deps.translationCache,
     5 * 60 * 1000,
     mode,
@@ -185,6 +187,30 @@ describe('fetchData failure handling (#139)', () => {
 
     expect(deps.setDataEnd).toHaveBeenCalledWith(
       'verb form',
+    );
+  });
+
+  it(// 冷却重试后成功查到释义：应清除 isUntranslatable 标记，恢复该词的正常高亮/弹窗（#140）
+  'clears the untranslatable flag on a successful retry', async () => {
+    queryWord.mockResolvedValue(
+      makeWord({
+        word: 'zzz',
+        isUntranslatable: true,
+        lastAttemptAt: 1,
+      }),
+    );
+    sendMessage.mockResolvedValue(
+      '<div id="clientnewword" data-definition="now translatable"></div>',
+    );
+    const deps = makeDeps();
+
+    await callFetchData('zzz', deps);
+
+    expect(deps.setDataEnd).toHaveBeenCalledWith(
+      'now translatable',
+    );
+    expect(deps.clearUntranslatable).toHaveBeenCalledWith(
+      'zzz',
     );
   });
 

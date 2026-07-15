@@ -9,6 +9,7 @@ import type { IWordStorage } from '../../src/core/types';
 import {
   addQueriedWord,
   clearUntranslatable,
+  decideSelectionAction,
   ignoreWord,
   markUntranslatable,
   shouldRetryTranslation,
@@ -234,5 +235,61 @@ describe('addQueriedWord regression: new states must not be clobbered on reselec
     expect(created?.isIgnored).toBe(false);
     expect(created?.isUntranslatable).toBe(false);
     expect(created?.lastAttemptAt).toBe(0);
+  });
+});
+
+describe('decideSelectionAction (#140)', () => {
+  it(// 从未查过的新词：照常弹出翻译面板
+  'shows the tooltip for a word with no info', () => {
+    expect(decideSelectionAction(undefined)).toBe(
+      'showTooltip',
+    );
+  });
+
+  it(// 停用词：不弹面板，改为出重译提示点
+  'shows the retranslate dot for an ignored word', () => {
+    const word = seedWord({ word: 'is', isIgnored: true });
+    expect(decideSelectionAction(word)).toBe('showDot');
+  });
+
+  it(// 查无翻译且仍在冷却期内：完全静默，什么都不出现
+  'stays silent for an untranslatable word within its cooldown', () => {
+    const word = seedWord({
+      word: 'zzz',
+      isUntranslatable: true,
+      lastAttemptAt: Date.now() - 1000,
+    });
+    expect(decideSelectionAction(word)).toBe('silent');
+  });
+
+  it(// 查无翻译但冷却期已过：照常弹出翻译面板，触发一次重试
+  'shows the tooltip for an untranslatable word once its cooldown has elapsed', () => {
+    const word = seedWord({
+      word: 'zzz',
+      isUntranslatable: true,
+      lastAttemptAt:
+        Date.now() - UNTRANSLATABLE_RETRY_COOLDOWN_MS - 1,
+    });
+    expect(decideSelectionAction(word)).toBe('showTooltip');
+  });
+
+  it(// 已记住（isDeleted）的词：行为不变，照常弹出翻译面板
+  'shows the tooltip for a memorized word, unaffected by isDeleted', () => {
+    const word = seedWord({
+      word: 'memorized',
+      isDeleted: true,
+    });
+    expect(decideSelectionAction(word)).toBe('showTooltip');
+  });
+
+  it(// 同时是停用词又被判定查无翻译：停用词的圆点优先
+  'prefers the retranslate dot when a word is both ignored and untranslatable', () => {
+    const word = seedWord({
+      word: 'both',
+      isIgnored: true,
+      isUntranslatable: true,
+      lastAttemptAt: Date.now(),
+    });
+    expect(decideSelectionAction(word)).toBe('showDot');
   });
 });

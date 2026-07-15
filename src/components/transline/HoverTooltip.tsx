@@ -8,6 +8,7 @@ import { processPageWords } from '@/src/content-scripts/ergodicWords';
 import { addWordLocal } from '@/src/core/storageManager';
 import type { IWordStorage } from '@/src/core/types';
 import {
+  clearUntranslatable,
   deleteWord,
   ignoreWord,
   markUntranslatable,
@@ -53,6 +54,7 @@ function fetchWordData(
     addWordLocal,
     markUntranslatable,
     onUntranslatable,
+    clearUntranslatable,
     translationCache,
     CACHE_EXPIRY,
     mode,

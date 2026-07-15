@@ -23,15 +23,23 @@ translation-card rendering stays in `src/components/transline`.
   three stay unhighlighted; a signature cache avoids re-syncing the worker
   when the sets haven't changed.
 - `AddButton.tsx` — the `mouseup` selection listener: normalizes and validates
-  the selected text, records it via `wordProcessor.addQueriedWord`, then shows
-  the selection translation card through `selectionTooltip.ts`.
+  the selected text, records it via `wordProcessor.addQueriedWord`, then
+  consults `wordProcessor.decideSelectionAction` on the word's lifecycle
+  state to pick one of three outcomes — the stopword retranslate dot, total
+  silence for an untranslatable word still in its retry cooldown, or the
+  normal selection translation card (`selectionTooltip.ts`).
 - `tooltipManager.tsx` — the single shared tooltip host for the whole page.
-  Hover cards and the selection card both render through `showTooltip`, so
-  showing one always displaces the other; handles anchor-following
-  positioning, outside-click/Escape/scroll dismissal.
+  Hover cards, the selection card, and the stopword retranslate dot all
+  render through `showTooltip` (the latter via its `render` override instead
+  of the default `HoverTooltip`), so showing one always displaces the
+  other; handles anchor-following positioning, outside-click/Escape/scroll
+  dismissal.
 - `selectionTooltip.ts` — thin selection-specific wrapper over
-  `tooltipManager`, pinning the card to the selection's captured rect (no live
-  DOM anchor to follow) and marking it dismiss-on-outside-click.
+  `tooltipManager`: `showSelectionTooltip` pins the translation card to the
+  selection's captured rect (no live DOM anchor to follow), and
+  `showRetranslateDot` shows the small stopword indicator instead — sharing
+  the same dismiss lifecycle — whose click un-ignores the word
+  (`wordProcessor.unignoreWord`) and reopens the normal card.
 - `storageAction.ts` / `core.ts` — re-export shims: `storageAction.ts`
   re-exposes `src/core/storageManager`'s functions under the content-scripts
   namespace, and `core.ts` re-exports `domUtils`/`matcherFacade`/
