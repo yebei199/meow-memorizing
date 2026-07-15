@@ -25,7 +25,7 @@ https://chromewebstore.google.com/detail/ginipindgefglbpiaogadmdknaaojdhp?utm_so
 
 ## 使用演示
 
-![example.gif](https://upload.cryptorust.uk/u/67HVap.gif)
+![example.gif](https://upload.cryptorust.uk/u/yY9qe7.gif)
 
 ## 功能亮点
 
