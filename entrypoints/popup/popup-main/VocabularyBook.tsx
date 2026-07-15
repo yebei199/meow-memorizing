@@ -6,14 +6,26 @@ import {
   Input,
   type MenuProps,
   Table,
+  Tabs,
 } from 'antd';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getWordsList } from '@/src/core/storageManager';
 import {
   getCurrentWebsiteDarkMode,
   updateWebsiteDarkMode,
 } from '@/src/core/themeDetector';
 import type { IAllWordsStorage } from '@/src/core/types';
+import {
+  restoreWord,
+  unignoreWord,
+} from '@/src/core/wordProcessor';
+
+/**
+ * 单词本三个标签页各自展示的子集：普通活跃词 / 已记住（isDeleted）/
+ * 停用词（isIgnored）。查无翻译（isUntranslatable）是系统临时态，不在
+ * 词汇书里展示，见 CONTEXT.md。
+ */
+type WordListMode = 'active' | 'memorized' | 'ignored';
 
 // 提取主题配置到组件外部，避免每次渲染都重新创建
 const getThemeConfig = (isDarkMode: boolean) => ({
@@ -167,19 +179,20 @@ export const VocabularyBook = () => {
     setIsDropdownOpen(flag);
   };
 
-  useEffect(() => {
-    async function fetchWords() {
-      try {
-        const words1 = await getWordsList();
-        if (words1) {
-          setWords(words1);
-        }
-      } catch (e) {
-        console.error(e);
+  const refreshWords = useCallback(async () => {
+    try {
+      const words1 = await getWordsList();
+      if (words1) {
+        setWords(words1);
       }
+    } catch (e) {
+      console.error(e);
     }
-    fetchWords().catch(console.error);
   }, []);
+
+  useEffect(() => {
+    refreshWords().catch(console.error);
+  }, [refreshWords]);
 
   // 定义下拉菜单项
   const items: MenuProps['items'] = [
@@ -436,15 +449,31 @@ export const VocabularyBook = () => {
           style={searchStyle}
         />
         <div style={{ marginTop: '16px' }}>
-          <Sheet
-            wordsList={words}
-            searchText={searchText}
-            isDarkMode={isDarkMode}
-            themeConfig={themeConfig}
-            minQueryTimes={minQueryTimes}
-            maxQueryTimes={maxQueryTimes}
-            minDeleteTimes={minDeleteTimes}
-            maxDeleteTimes={maxDeleteTimes}
+          <Tabs
+            items={(
+              [
+                { key: 'active', label: '单词本' },
+                { key: 'memorized', label: '已记住' },
+                { key: 'ignored', label: '停用词' },
+              ] as const
+            ).map(({ key, label }) => ({
+              key,
+              label,
+              children: (
+                <Sheet
+                  mode={key}
+                  wordsList={words}
+                  searchText={searchText}
+                  isDarkMode={isDarkMode}
+                  themeConfig={themeConfig}
+                  minQueryTimes={minQueryTimes}
+                  maxQueryTimes={maxQueryTimes}
+                  minDeleteTimes={minDeleteTimes}
+                  maxDeleteTimes={maxDeleteTimes}
+                  onWordsChanged={refreshWords}
+                />
+              ),
+            }))}
           />
         </div>
       </div>
@@ -452,14 +481,30 @@ export const VocabularyBook = () => {
   );
 };
 
+/** 三个标签页各自的筛选条件：普通词排除已记住/停用词，其余两个标签各自只看自己的状态。 */
+function matchesMode(
+  entry: IAllWordsStorage[string],
+  mode: WordListMode,
+): boolean {
+  switch (mode) {
+    case 'memorized':
+      return entry.isDeleted;
+    case 'ignored':
+      return Boolean(entry.isIgnored);
+    default:
+      return !entry.isDeleted && !entry.isIgnored;
+  }
+}
+
 // 提取处理单词列表的逻辑到单独的函数中
-const processWordsList = (
+export const processWordsList = (
   wordsList: IAllWordsStorage,
   searchText: string,
   minQueryTimes?: number,
   maxQueryTimes?: number,
   minDeleteTimes?: number,
   maxDeleteTimes?: number,
+  mode: WordListMode = 'active',
 ) => {
   return Object.keys(wordsList)
     .filter((key) => {
@@ -487,7 +532,7 @@ const processWordsList = (
         searchMatch &&
         queryTimesMatch &&
         deleteTimesMatch &&
-        !wordsList[key].isDeleted
+        matchesMode(wordsList[key], mode)
       );
     })
     .map((i) => ({
@@ -499,6 +544,7 @@ const processWordsList = (
 };
 
 function Sheet({
+  mode,
   wordsList,
   searchText,
   isDarkMode,
@@ -507,7 +553,9 @@ function Sheet({
   maxQueryTimes,
   minDeleteTimes,
   maxDeleteTimes,
+  onWordsChanged,
 }: {
+  mode: WordListMode;
   wordsList: IAllWordsStorage;
   searchText: string;
   isDarkMode: boolean;
@@ -516,6 +564,7 @@ function Sheet({
   maxQueryTimes?: number;
   minDeleteTimes?: number;
   maxDeleteTimes?: number;
+  onWordsChanged: () => void;
 }) {
   const [showWords, setShowWords] = useState<IShowWord[]>(
     [],
@@ -530,6 +579,7 @@ function Sheet({
         maxQueryTimes,
         minDeleteTimes,
         maxDeleteTimes,
+        mode,
       ),
     );
   }, [
@@ -539,11 +589,21 @@ function Sheet({
     maxQueryTimes,
     minDeleteTimes,
     maxDeleteTimes,
+    mode,
   ]);
 
   const tableStyle = getTableStyle(themeConfig);
   const cellStyle = getCellStyle(themeConfig);
   const headerStyle = getTableHeaderStyle(themeConfig); // 新增表头样式
+
+  const handleRestore = async (word: string) => {
+    if (mode === 'memorized') {
+      await restoreWord(word);
+    } else if (mode === 'ignored') {
+      await unignoreWord(word);
+    }
+    onWordsChanged();
+  };
 
   const columns: TableColumnsType<IShowWord> = [
     {
@@ -582,6 +642,24 @@ function Sheet({
         style: headerStyle,
       }),
     },
+    ...(mode === 'active'
+      ? []
+      : [
+          {
+            title: '操作',
+            key: 'actions',
+            onCell: () => ({ style: cellStyle }),
+            onHeaderCell: () => ({ style: headerStyle }),
+            render: (_: unknown, record: IShowWord) => (
+              <Button
+                size='small'
+                onClick={() => handleRestore(record.key)}
+              >
+                恢复
+              </Button>
+            ),
+          },
+        ]),
   ];
 
   return (

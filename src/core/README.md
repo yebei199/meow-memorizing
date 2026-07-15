@@ -19,11 +19,15 @@ and selection handling live in `src/content-scripts`.
   functions rather than touching `storage`/`browser.storage` directly.
 - `wordProcessor.ts` — pure business logic for the three lifecycle states:
   `addQueriedWord` (record a selection, resets `isDeleted` on reselect by
-  design but never touches `isIgnored`/`isUntranslatable`), `deleteWord`
-  (memorize/remove), `ignoreWord`/`unignoreWord` (stopword toggle),
-  `markUntranslatable`/`clearUntranslatable`/`shouldRetryTranslation`
-  (auto-detected no-translation state with a 3-day retry cooldown). Also holds
-  `filterWord` (selection validity check) and `delay`.
+  design but never touches `isIgnored`/`isUntranslatable`), `deleteWord`/
+  `restoreWord` (memorize/remove and its undo, used by the popup's 已记住 tab),
+  `ignoreWord`/`unignoreWord` (stopword toggle, also used by the popup's 停用词
+  tab), `markUntranslatable`/`clearUntranslatable`/`shouldRetryTranslation`
+  (auto-detected no-translation state with a 3-day retry cooldown), and
+  `decideSelectionAction` (what a mouse selection should do — show the
+  translation card, show the stopword retranslate dot, or stay silent for a
+  cooling-down untranslatable word). Also holds `filterWord` (selection
+  validity check) and `delay`.
 - `messaging.ts` — the typed `@webext-core/messaging` protocol
   (`trans`/`matcherSetWords`/`matcherFindMatches`/`matcherFindDeleted`) between
   content scripts and the background worker, needed because the WASM matcher

@@ -12,6 +12,7 @@ import {
   decideSelectionAction,
   ignoreWord,
   markUntranslatable,
+  restoreWord,
   shouldRetryTranslation,
   UNTRANSLATABLE_RETRY_COOLDOWN_MS,
   unignoreWord,
@@ -141,6 +142,31 @@ describe('unignoreWord', () => {
     const updated = store.get('the');
     expect(updated?.isIgnored).toBe(false);
     expect(updated?.queryTimes).toBe(5);
+  });
+});
+
+describe('restoreWord (#141)', () => {
+  it(// 词汇书「已记住」标签页的恢复操作：isDeleted 变回 false，其余字段不受影响
+  'clears isDeleted on a previously memorized word', async () => {
+    seedWord({
+      word: 'memorized',
+      isDeleted: true,
+      deleteTimes: 2,
+    });
+
+    await restoreWord('memorized');
+
+    const updated = store.get('memorized');
+    expect(updated?.isDeleted).toBe(false);
+    expect(updated?.deleteTimes).toBe(2);
+  });
+
+  it(// 从未被查询/记录过的单词调用恢复操作时，不应报错或凭空创建脏数据
+  'does nothing when the word has never been queried before', async () => {
+    await expect(
+      restoreWord('ghost'),
+    ).resolves.toBeUndefined();
+    expect(store.has('ghost')).toBe(false);
   });
 });
 

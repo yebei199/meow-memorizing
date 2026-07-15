@@ -81,6 +81,19 @@ export async function deleteWord(
 }
 
 /**
+ * 词汇书「已记住」标签页的恢复操作：撤销 deleteWord，与 unignoreWord 对称。
+ */
+export async function restoreWord(
+  word: string,
+): Promise<void> {
+  const cleanWord = word.trim().toLowerCase();
+  const existingWord = await queryWord(cleanWord);
+  if (!existingWord) return;
+
+  await addWordLocal({ ...existingWord, isDeleted: false });
+}
+
+/**
  * 标记为停用词（用户主动，永不翻译），与「已记住」「查无翻译」互相独立。
  */
 export async function ignoreWord(
