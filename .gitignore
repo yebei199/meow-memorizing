@@ -25,6 +25,9 @@ web-ext.config.ts
 # Generated WASM artifacts (rebuilt by `bun run wasm`)
 /src/wasm/generated
 
+# CodeGraph index
+.codegraph/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
