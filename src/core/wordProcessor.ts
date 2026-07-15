@@ -135,8 +135,7 @@ export async function clearUntranslatable(
 ): Promise<void> {
   const cleanWord = word.trim().toLowerCase();
   const existingWord = await queryWord(cleanWord);
-  if (!existingWord || !existingWord.isUntranslatable)
-    return;
+  if (!existingWord?.isUntranslatable) return;
 
   await addWordLocal({
     ...existingWord,
@@ -151,7 +150,7 @@ export async function clearUntranslatable(
 export function shouldRetryTranslation(
   wordInfo: IWordStorage | undefined,
 ): boolean {
-  if (!wordInfo || !wordInfo.isUntranslatable) return true;
+  if (!wordInfo?.isUntranslatable) return true;
 
   const lastAttemptAt = wordInfo.lastAttemptAt ?? 0;
   return (
