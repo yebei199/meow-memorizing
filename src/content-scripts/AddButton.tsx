@@ -46,8 +46,8 @@ export async function setupSelectionListener(): Promise<void> {
     const word = normalizeSelectedWord(range.toString());
     if (!word) return;
 
+    // 不清空原生选区：用户经常就是想选中之后复制文本，见 #140 讨论。
     const rect = range.getBoundingClientRect();
-    selection.removeAllRanges();
 
     await addQueriedWord(word);
     await processPageWords();
