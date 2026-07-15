@@ -28,6 +28,9 @@ web-ext.config.ts
 # CodeGraph index
 .codegraph/
 
+# Local secrets
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
