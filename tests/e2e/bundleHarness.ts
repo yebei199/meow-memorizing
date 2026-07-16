@@ -31,7 +31,6 @@ import type { IWordStorage } from '../../src/core/types';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const EXT_DIR = resolve(here, '../../.output/chrome-mv3');
-const BASE = 'http://127.0.0.1:5199';
 
 // startTranslation() waits 2s before its first scan and only then attaches the
 // selection listener. Tests that dispatch a selection must wait past this.
@@ -58,7 +57,10 @@ export function chromiumBinary(): string {
   );
   if (existsSync(cache)) {
     for (const d of readdirSync(cache)) {
-      if (!d.startsWith('chromium-') || d.includes('headless'))
+      if (
+        !d.startsWith('chromium-') ||
+        d.includes('headless')
+      )
         continue;
       for (const sub of [
         'chrome-linux64/chrome',
@@ -154,14 +156,12 @@ export async function setupBundleHarness(
   // Intercept the bing dictionary lookup the real background worker makes, so
   // specs stay offline and deterministic (replaces the stand-in transResponse).
   const transResponse = opts.transResponse ?? DEFAULT_TRANS;
-  await context.route(
-    '**/dict/clientsearch**',
-    (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'text/html',
-        body: transResponse,
-      }),
+  await context.route('**/dict/clientsearch**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: transResponse,
+    }),
   );
 
   if (opts.csp) {
