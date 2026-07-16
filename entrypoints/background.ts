@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { onMessage } from '@/src/core/messaging';
-import { getWordsList, myWords } from '@/src/core/storageManager';
+import {
+  getWordsList,
+  myWords,
+} from '@/src/core/storageManager';
 import { activeWords } from '@/src/core/wordSets';
 import { ensureMatcher } from '@/src/wasm/matcherLoader';
 
@@ -39,13 +42,23 @@ export default defineBackground({
     // docs/adr/0002-worker-owns-word-set.md).
     let ready: Promise<void> | null = null;
 
-    const rebuild = (list: IAllWordsStorageOrNull): void => {
+    const rebuild = (
+      list: IAllWordsStorageOrNull,
+    ): void => {
       ensureMatcher().setWords(activeWords(list ?? {}));
     };
 
     const ensureWordsLoaded = (): Promise<void> => {
       if (!ready) {
-        ready = getWordsList().then(rebuild);
+        // If the cold-start load rejects, clear `ready` so the next find
+        // retries instead of permanently reusing the rejected promise (which
+        // would kill matching for the worker's whole lifetime).
+        const attempt = getWordsList().then(rebuild);
+        const retryable = attempt.catch((error) => {
+          if (ready === retryable) ready = null;
+          throw error;
+        });
+        ready = retryable;
       }
       return ready;
     };

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { IWordStorage } from '../../src/core/types';
-import { activeWords, isExcluded } from '../../src/core/wordSets';
+import {
+  activeWords,
+  isExcluded,
+} from '../../src/core/wordSets';
 
 function makeWord(
   overrides: Partial<IWordStorage> & { word: string },
