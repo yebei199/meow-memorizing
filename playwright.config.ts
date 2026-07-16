@@ -9,9 +9,13 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: 'list',
-  // Only the CSP-probe test uses the default (extension-free) page fixture; give
-  // it the same Chromium binary the harness resolves, without --no-sandbox.
+  // Headless by default so runs never steal desktop focus. The harness reads
+  // this to decide `--headless=new` for the extension context; flip to false
+  // (or `--headed`) to watch a run. `launchOptions.executablePath` also gives
+  // the CSP-probe test's default (extension-free) page fixture the same
+  // Chromium binary the harness resolves, without --no-sandbox.
   use: {
+    headless: true,
     launchOptions: { executablePath: chromiumBinary() },
   },
   webServer: {

@@ -24,6 +24,7 @@ import {
   type BrowserContext,
   chromium,
   type Page,
+  test,
   type Worker,
 } from '@playwright/test';
 import type { IWordStorage } from '../../src/core/types';
@@ -129,19 +130,21 @@ async function currentWorker(
 export async function setupBundleHarness(
   opts: HarnessOptions,
 ): Promise<BundleHarness> {
+  // Headless is driven by playwright.config.ts `use.headless` (default true).
+  // launchPersistentContext must stay headless:false so Playwright launches the
+  // full Chromium (not the extension-incapable headless_shell); the windowless
+  // run comes from passing `--headless=new` instead — omitted when the config
+  // asks for a headed run so you can watch it.
+  const headless = test.info().project.use.headless ?? true;
   const userDir = mkdtempSync(join(tmpdir(), 'meow-ext-'));
   const context = await chromium.launchPersistentContext(
     userDir,
     {
-      // headless:false makes Playwright launch the full Chromium (not the
-      // headless_shell, which can't load extensions); --headless=new then runs
-      // it in Chrome's new headless mode — no visible window, no focus stealing,
-      // extensions still supported.
       headless: false,
       executablePath: chromiumBinary(),
       ...(opts.viewport ? { viewport: opts.viewport } : {}),
       args: [
-        '--headless=new',
+        ...(headless ? ['--headless=new'] : []),
         `--disable-extensions-except=${EXT_DIR}`,
         `--load-extension=${EXT_DIR}`,
       ],
