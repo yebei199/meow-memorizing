@@ -12,11 +12,10 @@
 //   3. DOM build         — the exact span-wrapping + replaceChild reflow work
 //                          domUtils does, minus React.
 //
-// Why no harness: bundleHarness routes matcher messages through a second
-// Playwright page via worker.evaluate(), whose cross-page latency dwarfs a real
-// content<->background postMessage and would make section 2 meaningless. Here
-// section 2 uses a real in-page Worker, the faithful structured-clone + thread
-// hop. No hard perf assertions (kept non-flaky); numbers are reported as
+// Why no harness: this benchmark isolates the matcher/messaging/DOM costs in a
+// single page (section 2 uses a real in-page Worker for the faithful
+// structured-clone + thread hop), so it deliberately avoids loading the whole
+// extension. No hard perf assertions (kept non-flaky); numbers are reported as
 // annotations.
 import { expect, test } from '@playwright/test';
 

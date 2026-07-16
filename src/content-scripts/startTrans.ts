@@ -3,7 +3,6 @@ import { setupSelectionListener } from './AddButton';
 import { processTextNode } from './domUtils';
 import { processPageWords } from './ergodicWords';
 import { findMatchingWords } from './matcherFacade';
-import { getWordsList } from './storageAction';
 
 let domObserver: MutationObserver | null = null;
 let debounceTimer: number | null = null;
@@ -82,9 +81,6 @@ function isMutationRelatedToTranslationPanel(
 async function processAddedTextNodes(
   addedNodes: NodeList,
 ): Promise<void> {
-  const wordsList = await getWordsList();
-  if (!wordsList) return;
-
   const textNodes: Text[] = [];
 
   // 提取新增的文本节点
@@ -139,11 +135,7 @@ async function processAddedTextNodes(
 
   // 处理新增的文本节点
   for (const textNode of textNodes) {
-    await processTextNode(
-      textNode,
-      wordsList,
-      findMatchingWords,
-    );
+    await processTextNode(textNode, findMatchingWords);
   }
 }
 

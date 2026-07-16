@@ -1,31 +1,39 @@
-// Bundle-injection harness — runs the real content script without loading the
-// extension (recent Chrome blocks unpacked --load-extension, and CDP
-// loadUnpacked leaves the extension inert in headless/CI).
+// Real loaded-extension harness. Loads the built extension (.output/chrome-mv3)
+// into a persistent Chromium context via --load-extension, so specs exercise
+// the real background service worker, real chrome.storage, and real messaging —
+// the only setup under which "the worker owns its word set" (ADR-0002) can be
+// validated. See docs/adr/0003-e2e-real-loaded-extension.md.
 //
-// It injects the built content bundle into a normal page, fakes the
-// `browser`/`chrome` surface the bundle needs (storage + messaging), and routes
-// the bundle's WASM-matcher messages to a second, CSP-free page running the
-// real matcher — a faithful stand-in for the background service worker, which
-// is where the matcher actually lives (see entrypoints/background.ts).
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+// Empirically verified constraints:
+// - Branded Chrome 137+ dropped --load-extension; a Playwright-provided Chromium
+//   binary is required. We resolve one below.
+// - The MV3 worker is lazy: it starts when the content script first messages it
+//   (the startup scan), so we wait for it after loading the content page.
+// - A worker recycle is simulated deterministically with CDP Target.closeTarget
+//   on the service_worker target — the next event starts a fresh instance with
+//   cleared module state.
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Browser, Page } from '@playwright/test';
+import {
+  type BrowserContext,
+  chromium,
+  type Page,
+  test,
+  type Worker,
+} from '@playwright/test';
 import type { IWordStorage } from '../../src/core/types';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const BUNDLE = readFileSync(
-  resolve(
-    here,
-    '../../.output/chrome-mv3/content-scripts/trans.js',
-  ),
-  'utf8',
-);
-const BASE = 'http://127.0.0.1:5199';
+const EXT_DIR = resolve(here, '../../.output/chrome-mv3');
 
 // startTranslation() waits 2s before its first scan and only then attaches the
-// selection listener. Tests that dispatch a selection must wait past this, or
-// the mouseup lands before the listener exists.
+// selection listener. Tests that dispatch a selection must wait past this.
 export const STARTUP_MS = 2600;
 
 // Default bing-style dictionary payload; carries the strings existing specs
@@ -33,109 +41,140 @@ export const STARTUP_MS = 2600;
 const DEFAULT_TRANS =
   '<div id="clientnewword" data-definition="n. lucky discovery adj. unexpectedly fortunate"></div>';
 
-interface WasmModule {
-  set_words(active: string[], deleted: string[]): void;
-  find_matches(text: string): unknown;
-  find_deleted_matches(text: string): unknown;
+/** Locate a Chromium binary that honours --load-extension. */
+export function chromiumBinary(): string {
+  const env = process.env.PLAYWRIGHT_CHROME;
+  if (env && existsSync(env)) return env;
+  try {
+    const bundled = chromium.executablePath();
+    if (bundled && existsSync(bundled)) return bundled;
+  } catch {
+    // executablePath throws if the browser isn't installed; fall through.
+  }
+  const cache = join(
+    process.env.HOME ?? '',
+    '.cache/ms-playwright',
+  );
+  if (existsSync(cache)) {
+    for (const d of readdirSync(cache)) {
+      if (
+        !d.startsWith('chromium-') ||
+        d.includes('headless')
+      )
+        continue;
+      for (const sub of [
+        'chrome-linux64/chrome',
+        'chrome-linux/chrome',
+      ]) {
+        const p = join(cache, d, sub);
+        if (existsSync(p)) return p;
+      }
+    }
+  }
+  throw new Error(
+    'No Chromium binary that accepts --load-extension. Run: npx playwright install chromium',
+  );
 }
-type WorkerWindow = Window & { __m: WasmModule };
 
 export interface BundleHarness {
-  /** Content page: real bundle injected, fake browser surface installed. */
+  /** Content page with the real extension's content script auto-injected. */
   page: Page;
+  context: BrowserContext;
+  /** The extension's background service worker. */
+  worker: Worker;
+  /** Extension id (host of the worker's chrome-extension:// URL). */
+  extId: string;
+  /**
+   * Simulate an MV3 idle recycle: stop the current service worker. The next
+   * message from the page starts a fresh instance with cleared module state.
+   */
+  recycleWorker(): Promise<void>;
+  /** Wait for a (possibly restarted) service worker to be live again. */
+  waitForWorker(): Promise<Worker>;
   close(): Promise<void>;
 }
 
 export interface HarnessOptions {
-  /** Fixture URL to load the content bundle into (served by server.ts). */
+  /** Fixture URL to load (served by server.ts). */
   url: string;
-  /** Optional content-page viewport, mainly for deterministic demo captures. */
+  /** Optional content-page viewport. */
   viewport?: { width: number; height: number };
-  /** Optional video recording for the content page context. */
+  /** Optional host-page CSP header to apply to `url`. */
+  csp?: string;
+  /** Seed `myWords` before the content script's first scan. */
+  seedWords?: Record<string, IWordStorage>;
+  /** Override the dictionary HTML the background returns for `trans`. */
+  transResponse?: string;
+  /** Record the content page's video (used by the README GIF generator). */
   recordVideo?: {
     dir: string;
     size?: { width: number; height: number };
   };
-  /** Optional host-page CSP header to apply to `url`. */
-  csp?: string;
-  /** Seed `myWords` before the bundle's startup scan reads storage. */
-  seedWords?: Record<string, IWordStorage>;
-  /** Override the dictionary HTML returned for `trans` messages. */
-  transResponse?: string;
+}
+
+async function currentWorker(
+  context: BrowserContext,
+  timeoutMs = 15000,
+): Promise<Worker> {
+  let sw = context.serviceWorkers()[0];
+  const deadline = Date.now() + timeoutMs;
+  while (!sw && Date.now() < deadline) {
+    sw = await context
+      .waitForEvent('serviceworker', { timeout: 1000 })
+      .catch(() => context.serviceWorkers()[0]);
+  }
+  if (!sw)
+    throw new Error(
+      'extension service worker never started',
+    );
+  return sw;
 }
 
 /**
- * Spin up a worker stand-in + a content page with the bundle injected. The
- * bundle starts its own scan (after its 2s delay); callers then drive the page.
+ * Launch a persistent Chromium context with the real extension loaded, open the
+ * content page, and (optionally) seed storage before the page highlights.
  */
 export async function setupBundleHarness(
-  browser: Browser,
   opts: HarnessOptions,
 ): Promise<BundleHarness> {
-  // Worker stand-in: a CSP-free page that loads and holds the real WASM matcher.
-  const workerCtx = await browser.newContext();
-  const worker = await workerCtx.newPage();
-  await worker.goto(`${BASE}/sample.html`);
-  await worker.evaluate(async () => {
-    const matcherUrl =
-      'http://127.0.0.1:5199/wasm/matcher.js';
-    const mod = await import(matcherUrl);
-    await mod.default();
-    (window as unknown as WorkerWindow).__m =
-      mod as unknown as WasmModule;
-  });
-
-  const transResponse = opts.transResponse ?? DEFAULT_TRANS;
-  const bg = async (
-    type: string,
-    data: {
-      text?: string;
-      active?: string[];
-      deleted?: string[];
+  // Headless is driven by playwright.config.ts `use.headless` (default true).
+  // launchPersistentContext must stay headless:false so Playwright launches the
+  // full Chromium (not the extension-incapable headless_shell); the windowless
+  // run comes from passing `--headless=new` instead — omitted when the config
+  // asks for a headed run so you can watch it.
+  const headless = test.info().project.use.headless ?? true;
+  const userDir = mkdtempSync(join(tmpdir(), 'meow-ext-'));
+  const context = await chromium.launchPersistentContext(
+    userDir,
+    {
+      headless: false,
+      executablePath: chromiumBinary(),
+      ...(opts.viewport ? { viewport: opts.viewport } : {}),
+      ...(opts.recordVideo
+        ? { recordVideo: opts.recordVideo }
+        : {}),
+      args: [
+        ...(headless ? ['--headless=new'] : []),
+        `--disable-extensions-except=${EXT_DIR}`,
+        `--load-extension=${EXT_DIR}`,
+      ],
     },
-  ): Promise<unknown> => {
-    if (type === 'matcherSetWords') {
-      await worker.evaluate(
-        (d) =>
-          (window as unknown as WorkerWindow).__m.set_words(
-            d.active ?? [],
-            d.deleted ?? [],
-          ),
-        data,
-      );
-      return undefined;
-    }
-    if (type === 'matcherFindMatches')
-      return worker.evaluate(
-        (d) =>
-          (
-            window as unknown as WorkerWindow
-          ).__m.find_matches(d.text ?? ''),
-        data,
-      );
-    if (type === 'matcherFindDeleted')
-      return worker.evaluate(
-        (d) =>
-          (
-            window as unknown as WorkerWindow
-          ).__m.find_deleted_matches(d.text ?? ''),
-        data,
-      );
-    if (type === 'trans') return transResponse;
-    return undefined;
-  };
+  );
 
-  const contentCtx = await browser.newContext({
-    ...(opts.viewport ? { viewport: opts.viewport } : {}),
-    ...(opts.recordVideo
-      ? { recordVideo: opts.recordVideo }
-      : {}),
-  });
-  const page = await contentCtx.newPage();
-  await page.exposeFunction('__bg', bg);
+  // Intercept the bing dictionary lookup the real background worker makes, so
+  // specs stay offline and deterministic (replaces the stand-in transResponse).
+  const transResponse = opts.transResponse ?? DEFAULT_TRANS;
+  await context.route('**/dict/clientsearch**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: transResponse,
+    }),
+  );
+
   if (opts.csp) {
     const csp = opts.csp;
-    await page.route(opts.url, async (route) => {
+    await context.route(opts.url, async (route) => {
       const res = await route.fetch();
       await route.fulfill({
         status: 200,
@@ -145,68 +184,58 @@ export async function setupBundleHarness(
       });
     });
   }
-  await page.addInitScript((seed) => {
-    const mem: Record<string, unknown> = {
-      myWords: seed ?? {},
-      isWebsiteDarkMode: false,
-    };
-    const clone = (v: unknown) => structuredClone(v);
-    const area = () => ({
-      get: async (k: unknown) => {
-        if (k == null) return clone(mem);
-        if (typeof k === 'string')
-          return { [k]: clone(mem[k]) };
-        if (Array.isArray(k)) {
-          const o: Record<string, unknown> = {};
-          for (const x of k) o[x] = clone(mem[x]);
-          return o;
-        }
-        const o: Record<string, unknown> = {};
-        for (const x of Object.keys(k as object))
-          o[x] = x in mem ? clone(mem[x]) : (k as never)[x];
-        return o;
-      },
-      set: async (o: Record<string, unknown>) => {
-        for (const x of Object.keys(o))
-          mem[x] = clone(o[x]);
-      },
-      remove: async () => {},
-      onChanged: { addListener() {}, removeListener() {} },
-    });
-    const g = globalThis as unknown as Record<
-      string,
-      unknown
-    >;
-    g.browser = {
-      runtime: {
-        id: 'harness',
-        getURL: (p: string) => `about:blank#${p}`,
-        onMessage: { addListener() {} },
-        sendMessage: async (msg: {
-          type: string;
-          data: unknown;
-        }) => ({
-          res: await (
-            g.__bg as (
-              t: string,
-              d: unknown,
-            ) => Promise<unknown>
-          )(msg.type, msg.data),
-        }),
-      },
-      storage: { sync: area(), local: area() },
-    };
-    g.chrome = g.browser;
-  }, opts.seedWords ?? {});
 
+  const page = await context.newPage();
   await page.goto(opts.url, { waitUntil: 'load' });
-  await page.addScriptTag({ content: BUNDLE });
+
+  // The content script wakes the worker on its first scan; grab it, then seed.
+  const worker = await currentWorker(context);
+  const extId = new URL(worker.url()).host;
+
+  if (opts.seedWords) {
+    await worker.evaluate((seed) => {
+      // chrome.storage.sync backs WXT's `sync:myWords` item.
+      const c = (
+        globalThis as unknown as {
+          chrome: {
+            storage: {
+              sync: {
+                set(v: unknown): Promise<void>;
+              };
+            };
+          };
+        }
+      ).chrome;
+      return c.storage.sync.set({ myWords: seed });
+    }, opts.seedWords);
+    // Re-scan with the seeded words now present (the first scan saw none).
+    await page.reload({ waitUntil: 'load' });
+  }
 
   return {
     page,
+    context,
+    worker,
+    extId,
+    recycleWorker: async () => {
+      const session = await context.newCDPSession(page);
+      const { targetInfos } = await session.send(
+        'Target.getTargets',
+      );
+      const sw = targetInfos.find(
+        (t) =>
+          t.type === 'service_worker' &&
+          t.url.includes(extId),
+      );
+      if (sw)
+        await session.send('Target.closeTarget', {
+          targetId: sw.targetId,
+        });
+      await session.detach();
+    },
+    waitForWorker: () => currentWorker(context),
     close: async () => {
-      await contentCtx.close();
-      await workerCtx.close();
+      await context.close();
     },
   };
 }

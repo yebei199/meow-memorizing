@@ -6,7 +6,6 @@
 // unsupported by design, so init failure throws and the feature is off.
 // Generated glue under ./generated is produced by `bun run wasm`.
 import {
-  find_deleted_matches,
   find_matches,
   initSync,
   set_words,
@@ -22,9 +21,8 @@ export interface WasmMatch {
 
 /** Bound, type-safe surface over the wasm exports. */
 export interface WasmMatcher {
-  setWords(active: string[], deleted: string[]): void;
+  setWords(active: string[]): void;
   findMatches(text: string): WasmMatch[];
-  findDeletedMatches(text: string): WasmMatch[];
 }
 
 let cached: WasmMatcher | undefined;
@@ -38,12 +36,9 @@ export function ensureMatcher(): WasmMatcher {
   if (cached !== undefined) return cached;
   initSync({ module: wasmBytes });
   cached = {
-    setWords: (active, deleted) =>
-      set_words(active, deleted),
+    setWords: (active) => set_words(active),
     findMatches: (text) =>
       find_matches(text) as WasmMatch[],
-    findDeletedMatches: (text) =>
-      find_deleted_matches(text) as WasmMatch[],
   };
   return cached;
 }

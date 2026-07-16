@@ -8,10 +8,8 @@ import {
   setupBundleHarness,
 } from './bundleHarness';
 
-test('shows a translation card for a selected word without nested highlight markup', async ({
-  browser,
-}) => {
-  const h = await setupBundleHarness(browser, {
+test('shows a translation card for a selected word without nested highlight markup', async () => {
+  const h = await setupBundleHarness({
     url: 'http://127.0.0.1:5199/sample.html',
   });
 
@@ -38,7 +36,11 @@ test('shows a translation card for a selected word without nested highlight mark
   await expect(tooltip).toHaveCount(1, { timeout: 15000 });
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('serendipity');
-  await expect(tooltip).toContainText('lucky discovery');
+  // Definition comes from the real background `trans` fetch (intercepted), so
+  // allow for the worker cold-start + fetch on top of the hover delay.
+  await expect(tooltip).toContainText('lucky discovery', {
+    timeout: 15000,
+  });
   await expect(tooltip).toContainText('已加入词库');
   // Selecting auto-saves, so the card shows the saved state, not an add button.
   await expect(
@@ -59,10 +61,8 @@ test('shows a translation card for a selected word without nested highlight mark
   await h.close();
 });
 
-test('selecting a word immediately highlights all existing matches', async ({
-  browser,
-}) => {
-  const h = await setupBundleHarness(browser, {
+test('selecting a word immediately highlights all existing matches', async () => {
+  const h = await setupBundleHarness({
     url: 'http://127.0.0.1:5199/sample.html',
   });
 
@@ -89,10 +89,8 @@ test('selecting a word immediately highlights all existing matches', async ({
   await h.close();
 });
 
-test('silently closes the card for a selected word without dictionary results', async ({
-  browser,
-}) => {
-  const h = await setupBundleHarness(browser, {
+test('silently closes the card for a selected word without dictionary results', async () => {
+  const h = await setupBundleHarness({
     url: 'http://127.0.0.1:5199/sample.html',
     transResponse:
       '<html><body>No dictionary result</body></html>',
@@ -126,10 +124,8 @@ test('silently closes the card for a selected word without dictionary results', 
   await h.close();
 });
 
-test('selecting a word inside an existing highlight tree immediately highlights it', async ({
-  browser,
-}) => {
-  const h = await setupBundleHarness(browser, {
+test('selecting a word inside an existing highlight tree immediately highlights it', async () => {
+  const h = await setupBundleHarness({
     url: 'http://127.0.0.1:5199/sample.html',
     seedWords: {
       hello: {
@@ -161,10 +157,8 @@ test('selecting a word inside an existing highlight tree immediately highlights 
   await h.close();
 });
 
-test('highlights and opens hover cards inside github-like inline links', async ({
-  browser,
-}) => {
-  const h = await setupBundleHarness(browser, {
+test('highlights and opens hover cards inside github-like inline links', async () => {
+  const h = await setupBundleHarness({
     url: 'http://127.0.0.1:5199/sample.html',
     seedWords: {
       reddit: {
@@ -195,15 +189,17 @@ test('highlights and opens hover cards inside github-like inline links', async (
   await expect(tooltip).toHaveCount(1, { timeout: 15000 });
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('reddit');
-  await expect(tooltip).toContainText('lucky discovery');
+  // Definition comes from the real background `trans` fetch (intercepted), so
+  // allow for the worker cold-start + fetch on top of the hover delay.
+  await expect(tooltip).toContainText('lucky discovery', {
+    timeout: 15000,
+  });
 
   await h.close();
 });
 
-test('shows a retranslate dot for a stopword, and clicking it restores the tooltip (#140)', async ({
-  browser,
-}) => {
-  const h = await setupBundleHarness(browser, {
+test('shows a retranslate dot for a stopword, and clicking it restores the tooltip (#140)', async () => {
+  const h = await setupBundleHarness({
     url: 'http://127.0.0.1:5199/sample.html',
     seedWords: {
       hush: {
@@ -246,10 +242,8 @@ test('shows a retranslate dot for a stopword, and clicking it restores the toolt
   await h.close();
 });
 
-test('keeps the native selection intact after selecting a stopword (so copy still works)', async ({
-  browser,
-}) => {
-  const h = await setupBundleHarness(browser, {
+test('keeps the native selection intact after selecting a stopword (so copy still works)', async () => {
+  const h = await setupBundleHarness({
     url: 'http://127.0.0.1:5199/sample.html',
     seedWords: {
       hush: {

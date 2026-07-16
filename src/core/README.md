@@ -6,7 +6,7 @@ out of this boundary: React components live in `src/components`, page scanning
 and selection handling live in `src/content-scripts`.
 
 - `types.ts` — the shared `IWordStorage`/`IAllWordsStorage` schema and the
-  WASM-matcher wire types (`IWordMatch`, `IMatcherWords`). `IWordStorage`
+  WASM-matcher wire type (`IWordMatch`). `IWordStorage`
   carries three independent lifecycle flags — `isDeleted` (memorized, user
   removes from the vocabulary book), `isIgnored` (stopword, user marks as
   never-translate), `isUntranslatable` (system-detected, no dictionary entry,
@@ -16,7 +16,13 @@ and selection handling live in `src/content-scripts`.
   `@webext-core/storage` for the `myWords` and `isWebsiteDarkMode` extension
   storage items. Owns the only read/write path (`queryWord`/`addWordLocal`) to
   the word list; every other module reaches storage through these two
-  functions rather than touching `storage`/`browser.storage` directly.
+  functions rather than touching `storage`/`browser.storage` directly. The
+  background worker also reads `myWords` here (and `myWords.watch`es it) to
+  rehydrate its matcher automata, see `docs/adr/0002-worker-owns-word-set.md`.
+- `wordSets.ts` — pure `activeWords`/`isExcluded`: the three-flag exclusion
+  union (`isDeleted`/`isIgnored`/`isUntranslatable`) that decides which words
+  the worker feeds to the highlight automaton. The single home for that logic,
+  imported by the background worker.
 - `wordProcessor.ts` — pure business logic for the three lifecycle states:
   `addQueriedWord` (record a selection, resets `isDeleted` on reselect by
   design but never touches `isIgnored`/`isUntranslatable`), `deleteWord`/
@@ -29,10 +35,11 @@ and selection handling live in `src/content-scripts`.
   cooling-down untranslatable word). Also holds `filterWord` (selection
   validity check) and `delay`.
 - `messaging.ts` — the typed `@webext-core/messaging` protocol
-  (`trans`/`matcherSetWords`/`matcherFindMatches`/`matcherFindDeleted`) between
-  content scripts and the background worker, needed because the WASM matcher
-  can only run in the worker's extension-page CSP context, not a content
-  script's page-inherited CSP.
+  (`trans`/`matcherFindMatches`) between content scripts and the background
+  worker, needed because the WASM matcher can only run in the worker's
+  extension-page CSP context, not a content script's page-inherited CSP. The
+  worker owns its word set, so there is no word-set push message — the content
+  script only sends finds.
 - `themeDetector.ts` — best-effort light/dark detection for the host page
   (media query, CSS class heuristics, background-color luminance) plus a
   `MutationObserver`-driven sync of the result into `isWebsiteDarkMode`

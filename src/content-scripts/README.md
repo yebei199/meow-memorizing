@@ -16,12 +16,15 @@ translation-card rendering stays in `src/components/transline`.
   `domUtils.processTextNode`, which matches words via `matcherFacade` and
   replaces each matched text node with a React-rendered `HighlightedText` tree,
   marking the wrapper so rescans skip it.
-- `matcherFacade.ts` — the only place that computes the active/deleted word
-  sets sent to the background WASM matcher. `isExcluded()` unions the three
-  independent lifecycle flags (`isDeleted`, `isIgnored`, `isUntranslatable` —
-  see `CONTEXT.md` and `docs/adr/0001-split-word-lifecycle-states.md`) so all
-  three stay unhighlighted; a signature cache avoids re-syncing the worker
-  when the sets haven't changed.
+- `matcherFacade.ts` — a thin forwarder that sends a text chunk to the
+  background WASM matcher and returns the active-word matches. The worker owns
+  the word set itself (rehydrated from storage, see
+  `docs/adr/0002-worker-owns-word-set.md`), so the content script no longer
+  computes/pushes word sets or caches a sync signature. The active/deleted
+  split now lives in `src/core/wordSets.ts` (`activeWords`/`isExcluded`, the
+  three-flag union of `isDeleted`/`isIgnored`/`isUntranslatable` — see
+  `CONTEXT.md` and `docs/adr/0001-split-word-lifecycle-states.md`), read by the
+  worker.
 - `AddButton.tsx` — the `mouseup` selection listener: normalizes and validates
   the selected text, records it via `wordProcessor.addQueriedWord`, then
   consults `wordProcessor.decideSelectionAction` on the word's lifecycle
