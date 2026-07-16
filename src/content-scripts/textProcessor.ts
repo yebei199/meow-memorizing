@@ -1,4 +1,3 @@
-import { getWordsList } from '@/src/core/storageManager';
 import {
   getAllTextNodes,
   processTextNode,
@@ -7,14 +6,12 @@ import {
 import { findMatchingWords } from './matcherFacade';
 
 /**
- * 处理页面中的单词
+ * 处理页面中的单词。词表由后台 worker 自己从 storage 持有（见
+ * docs/adr/0002-worker-owns-word-set.md），内容脚本只负责扫描文本节点、
+ * 把文本交给匹配器，不再读取或传递词表。
  */
 export async function processPageWords(): Promise<void> {
   try {
-    // 获取单词列表
-    const wordsList = await getWordsList();
-    if (!wordsList) return;
-
     // Full-page rescans must revisit existing text nodes after the word list changes.
     resetProcessedTextNodes();
 
@@ -22,11 +19,7 @@ export async function processPageWords(): Promise<void> {
     const textNodes = getAllTextNodes();
 
     // 分块处理文本节点，避免阻塞主线程
-    await processTextNodesInChunks(
-      textNodes,
-      wordsList,
-      50,
-    );
+    await processTextNodesInChunks(textNodes, 50);
   } catch (error) {
     console.error('处理页面单词时出错:', error);
   }
@@ -35,12 +28,10 @@ export async function processPageWords(): Promise<void> {
 /**
  * 分块处理文本节点
  * @param textNodes 文本节点数组
- * @param wordsList 单词列表
  * @param chunkSize 每块处理的节点数
  */
 async function processTextNodesInChunks(
   textNodes: Text[],
-  wordsList: Record<string, any>,
   chunkSize: number,
 ): Promise<void> {
   for (let i = 0; i < textNodes.length; i += chunkSize) {
@@ -48,11 +39,7 @@ async function processTextNodesInChunks(
 
     // 处理当前块
     const promises = chunk.map((textNode) =>
-      processTextNode(
-        textNode,
-        wordsList,
-        findMatchingWords,
-      ),
+      processTextNode(textNode, findMatchingWords),
     );
     await Promise.all(promises);
 

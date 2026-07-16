@@ -1,5 +1,7 @@
 import axios from 'axios';
-import { MATCHER_COLD, onMessage } from '@/src/core/messaging';
+import { onMessage } from '@/src/core/messaging';
+import { getWordsList, myWords } from '@/src/core/storageManager';
+import { activeWords } from '@/src/core/wordSets';
 import { ensureMatcher } from '@/src/wasm/matcherLoader';
 
 export default defineBackground({
@@ -28,27 +30,41 @@ export default defineBackground({
     // world, and the extension worker must explicitly opt into
     // `wasm-unsafe-eval` via MV3 `content_security_policy`.
     //
-    // This MV3 worker is ephemeral — Chrome recycles it after ~30s idle, wiping
-    // the matcher automata. The content script caches "already synced" state
-    // that outlives the worker, so after a restart it would skip re-sending the
-    // words and every find would hit an empty matcher (highlighting silently
-    // dies until a full page reload). `wordsSynced` resets to false whenever a
-    // fresh worker re-evaluates this module, so a find that arrives before the
-    // words were (re)pushed reports MATCHER_COLD instead of a bogus empty match,
-    // letting the facade re-sync and retry. Empty is distinct from cold: a user
-    // with no active words still sends matcherSetWords([], []) first.
-    let wordsSynced = false;
-    onMessage('matcherSetWords', ({ data }) => {
-      ensureMatcher().setWords(data.active, data.deleted);
-      wordsSynced = true;
+    // The MV3 worker is ephemeral — Chrome recycles it after ~30s idle, wiping
+    // the automata. So the worker OWNS its word set instead of being fed by the
+    // content script: it reads the words from storage on cold start and rebuilds
+    // whenever they change. `ready` memoizes the cold-start load so the first
+    // find awaits it and never sees an empty matcher. This removes the class of
+    // bug where a content-script "already synced" cache outlived the worker (see
+    // docs/adr/0002-worker-owns-word-set.md).
+    let ready: Promise<void> | null = null;
+
+    const rebuild = (list: IAllWordsStorageOrNull): void => {
+      ensureMatcher().setWords(activeWords(list ?? {}));
+    };
+
+    const ensureWordsLoaded = (): Promise<void> => {
+      if (!ready) {
+        ready = getWordsList().then(rebuild);
+      }
+      return ready;
+    };
+
+    // Rebuild live while the worker is awake; storage changes don't wake a
+    // sleeping worker, but the next find will cold-load fresh words anyway.
+    myWords.watch((list) => {
+      rebuild(list);
+      ready = Promise.resolve();
     });
-    onMessage('matcherFindMatches', ({ data }) => {
-      if (!wordsSynced) throw new Error(MATCHER_COLD);
+
+    onMessage('matcherFindMatches', async ({ data }) => {
+      await ensureWordsLoaded();
       return ensureMatcher().findMatches(data.text);
-    });
-    onMessage('matcherFindDeleted', ({ data }) => {
-      if (!wordsSynced) throw new Error(MATCHER_COLD);
-      return ensureMatcher().findDeletedMatches(data.text);
     });
   },
 });
+
+// Local alias: myWords.watch hands back the stored value or null.
+type IAllWordsStorageOrNull = Awaited<
+  ReturnType<typeof getWordsList>
+> | null;

@@ -1,8 +1,8 @@
 //! Aho-Corasick word-matching core.
 //!
 //! Replaces the legacy `O(text × words)` `indexOf` loop with a single-pass
-//! automaton scan. Two automata (active + deleted word lists) are cached and
-//! rebuilt only when the word set changes. Match semantics: leftmost-longest,
+//! automaton scan. The active-word automaton is cached and rebuilt only when
+//! the word set changes. Match semantics: leftmost-longest,
 //! non-overlapping, ASCII case-insensitive, both flanks non-`[a-zA-Z]`,
 //! returned `word` preserves source casing.
 //!
@@ -22,32 +22,21 @@ pub struct Match {
     pub end: usize,
 }
 
-/// Caches the active and deleted automata across calls.
+/// Caches the active-word automaton across calls.
 #[derive(Default)]
 pub struct Matcher {
     active: Option<AhoCorasick>,
-    deleted: Option<AhoCorasick>,
 }
 
 impl Matcher {
-    /// Rebuild both automata. Call only when the word set changes.
-    pub fn set_words(
-        &mut self,
-        active: &[String],
-        deleted: &[String],
-    ) {
+    /// Rebuild the automaton. Call only when the word set changes.
+    pub fn set_words(&mut self, active: &[String]) {
         self.active = build(active);
-        self.deleted = build(deleted);
     }
 
     /// Matches against the active word list.
     pub fn find_active(&self, text: &str) -> Vec<Match> {
         find(self.active.as_ref(), text)
-    }
-
-    /// Matches against the deleted word list.
-    pub fn find_deleted(&self, text: &str) -> Vec<Match> {
-        find(self.deleted.as_ref(), text)
     }
 }
 
@@ -129,7 +118,7 @@ mod tests {
         let mut m = Matcher::default();
         let active: Vec<String> =
             active.iter().map(|s| s.to_string()).collect();
-        m.set_words(&active, &[]);
+        m.set_words(&active);
         m
     }
 
@@ -177,14 +166,6 @@ mod tests {
         assert_eq!(got[0].index, 3);
         assert_eq!(got[0].end, 6);
         assert_eq!(got[0].word, "cat");
-    }
-
-    #[test]
-    fn deleted_list_is_separate() {
-        let mut m = Matcher::default();
-        m.set_words(&["keep".into()], &["gone".into()]);
-        assert!(m.find_active("a gone word").is_empty());
-        assert_eq!(m.find_deleted("a gone word").len(), 1);
     }
 
     #[test]

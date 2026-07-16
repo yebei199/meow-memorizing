@@ -33,12 +33,6 @@ export interface IWordMatch {
   end: number;
 }
 
-/** Active + deleted word lists pushed to the background matcher. */
-export interface IMatcherWords {
-  active: string[];
-  deleted: string[];
-}
-
 export interface ExtensionStorageSchema {
   myWords: IAllWordsStorage;
   // 网站主题模式，true表示深色模式，false表示浅色模式
