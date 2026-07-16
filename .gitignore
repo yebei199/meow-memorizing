@@ -28,6 +28,9 @@ web-ext.config.ts
 # CodeGraph index
 .codegraph/
 
+# direnv (nix flake shell)
+.direnv/
+
 # Local secrets
 .env
 

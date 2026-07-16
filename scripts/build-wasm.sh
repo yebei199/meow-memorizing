@@ -5,22 +5,19 @@
 # self-contained (no fetch / no web_accessible_resources).
 #
 # Requires: wasm32-unknown-unknown target and wasm-bindgen-cli, whose version
-# must match the pinned `wasm-bindgen` crate exactly.
+# must match the pinned `wasm-bindgen` crate exactly. The flake devShell (loaded
+# via direnv, see flake.nix / .envrc) puts the matching wasm-bindgen-cli on PATH;
+# the source of truth is the flake, so this script no longer reorders PATH itself.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-
-# Prefer user-installed cargo binaries when PATH also contains an older
-# profile-managed wasm-bindgen.
-if [ -d "${HOME}/.cargo/bin" ]; then
-    PATH="${HOME}/.cargo/bin:${PATH}"
-fi
 
 PINNED="0.2.122"
 CLI_VER="$(wasm-bindgen --version | awk '{print $2}')"
 if [ "$CLI_VER" != "$PINNED" ]; then
     echo "error: wasm-bindgen CLI $CLI_VER != pinned crate $PINNED" >&2
-    echo "       install the matching wasm-bindgen-cli." >&2
+    echo "       enter the dev shell (\`direnv allow\`, or \`nix develop\`) so the" >&2
+    echo "       pinned wasm-bindgen-cli is on PATH; rustup machines: install it." >&2
     exit 1
 fi
 
