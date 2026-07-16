@@ -7,7 +7,10 @@
 // `wasm-unsafe-eval`, so `new WebAssembly.Module` throws `CompileError` in the
 // content script and highlighting silently dies. The worker's extension CSP
 // permits WASM, so the matcher is driven from there.
-import { sendMessage } from '@/src/core/messaging';
+import {
+  MATCHER_COLD,
+  sendMessage,
+} from '@/src/core/messaging';
 import type { IWordMatch } from '@/src/core/types';
 
 type WordsList = Record<string, any>;
@@ -79,13 +82,42 @@ async function ensureWords(
   await syncInFlight;
 }
 
+/** True when the worker rejected a find because it holds no words yet. */
+function isColdMatcher(error: unknown): boolean {
+  return (
+    error instanceof Error && error.message === MATCHER_COLD
+  );
+}
+
+/**
+ * Run a find, recovering from an ephemeral MV3 worker restart. The worker's
+ * matcher state does not outlive the worker, but `lastSig` (page-durable) does,
+ * so a rescan with an unchanged word set would otherwise skip the re-sync and
+ * hit an empty matcher forever. On the cold signal we invalidate the cache,
+ * force a re-sync, and retry once.
+ */
+async function findWithResync(
+  message: 'matcherFindMatches' | 'matcherFindDeleted',
+  text: string,
+  wordsList: WordsList,
+): Promise<IWordMatch[]> {
+  await ensureWords(wordsList);
+  try {
+    return await sendMessage(message, { text });
+  } catch (error) {
+    if (!isColdMatcher(error)) throw error;
+    lastSig = null;
+    await ensureWords(wordsList);
+    return sendMessage(message, { text });
+  }
+}
+
 /** Active-word matches. */
 export async function findMatchingWords(
   text: string,
   wordsList: WordsList,
 ): Promise<IWordMatch[]> {
-  await ensureWords(wordsList);
-  return sendMessage('matcherFindMatches', { text });
+  return findWithResync('matcherFindMatches', text, wordsList);
 }
 
 /** Deleted-word matches. */
@@ -93,6 +125,5 @@ export async function findDeletedWords(
   text: string,
   wordsList: WordsList,
 ): Promise<IWordMatch[]> {
-  await ensureWords(wordsList);
-  return sendMessage('matcherFindDeleted', { text });
+  return findWithResync('matcherFindDeleted', text, wordsList);
 }

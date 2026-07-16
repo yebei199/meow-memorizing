@@ -21,7 +21,10 @@ translation-card rendering stays in `src/components/transline`.
   independent lifecycle flags (`isDeleted`, `isIgnored`, `isUntranslatable` —
   see `CONTEXT.md` and `docs/adr/0001-split-word-lifecycle-states.md`) so all
   three stay unhighlighted; a signature cache avoids re-syncing the worker
-  when the sets haven't changed.
+  when the sets haven't changed. Because that cache is page-durable but the MV3
+  worker is ephemeral, a find that hits a just-restarted (empty) worker gets a
+  `MATCHER_COLD` signal; the facade then invalidates the cache, re-syncs, and
+  retries so highlighting survives worker recycling.
 - `AddButton.tsx` — the `mouseup` selection listener: normalizes and validates
   the selected text, records it via `wordProcessor.addQueriedWord`, then
   consults `wordProcessor.decideSelectionAction` on the word's lifecycle

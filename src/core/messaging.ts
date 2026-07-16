@@ -23,3 +23,9 @@ interface ProtocolMap {
 
 export const { sendMessage, onMessage } =
   defineExtensionMessaging<ProtocolMap>();
+
+// Thrown by the background matcher when a find arrives before any word set was
+// pushed to this (possibly just-restarted) worker instance. The content-script
+// facade catches it to re-sync the words and retry — see matcherFacade.ts and
+// entrypoints/background.ts for why the ephemeral MV3 worker needs this signal.
+export const MATCHER_COLD = 'matcher-cold';
