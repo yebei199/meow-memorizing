@@ -15,7 +15,6 @@ import {
 } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium } from '@playwright/test';
 import {
   STARTUP_MS,
   selectWord,
@@ -50,10 +49,9 @@ async function main(): Promise<void> {
   mkdirSync(videoDir, { recursive: true });
 
   const server = await ensureServer();
-  const browser = await launchBrowser();
 
   try {
-    const webmPath = await recordDemo(browser);
+    const webmPath = await recordDemo();
     runChecked('ffmpeg', [
       '-y',
       '-i',
@@ -75,7 +73,6 @@ async function main(): Promise<void> {
     updateReadme(url);
     console.log(`README GIF updated: ${url}`);
   } finally {
-    await browser.close();
     server?.kill('SIGTERM');
   }
 }
@@ -138,20 +135,9 @@ async function isServerReady(): Promise<boolean> {
   }
 }
 
-async function launchBrowser() {
-  const executablePath =
-    process.env.PLAYWRIGHT_CHROME ?? undefined;
-
-  return chromium.launch({
-    executablePath,
-    args: ['--no-sandbox'],
-  });
-}
-
-async function recordDemo(
-  browser: Awaited<ReturnType<typeof launchBrowser>>,
-): Promise<string> {
-  const h = await setupBundleHarness(browser, {
+async function recordDemo(): Promise<string> {
+  // The harness self-launches the real extension in its own Chromium context.
+  const h = await setupBundleHarness({
     url: sampleUrl,
     viewport: size,
     recordVideo: { dir: videoDir, size },

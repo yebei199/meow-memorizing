@@ -105,6 +105,11 @@ export interface HarnessOptions {
   seedWords?: Record<string, IWordStorage>;
   /** Override the dictionary HTML the background returns for `trans`. */
   transResponse?: string;
+  /** Record the content page's video (used by the README GIF generator). */
+  recordVideo?: {
+    dir: string;
+    size?: { width: number; height: number };
+  };
 }
 
 async function currentWorker(
@@ -145,6 +150,9 @@ export async function setupBundleHarness(
       headless: false,
       executablePath: chromiumBinary(),
       ...(opts.viewport ? { viewport: opts.viewport } : {}),
+      ...(opts.recordVideo
+        ? { recordVideo: opts.recordVideo }
+        : {}),
       args: [
         ...(headless ? ['--headless=new'] : []),
         `--disable-extensions-except=${EXT_DIR}`,
