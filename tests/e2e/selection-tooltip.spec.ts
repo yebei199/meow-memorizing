@@ -36,7 +36,11 @@ test('shows a translation card for a selected word without nested highlight mark
   await expect(tooltip).toHaveCount(1, { timeout: 15000 });
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('serendipity');
-  await expect(tooltip).toContainText('lucky discovery');
+  // Definition comes from the real background `trans` fetch (intercepted), so
+  // allow for the worker cold-start + fetch on top of the hover delay.
+  await expect(tooltip).toContainText('lucky discovery', {
+    timeout: 15000,
+  });
   await expect(tooltip).toContainText('已加入词库');
   // Selecting auto-saves, so the card shows the saved state, not an add button.
   await expect(
@@ -185,7 +189,11 @@ test('highlights and opens hover cards inside github-like inline links', async (
   await expect(tooltip).toHaveCount(1, { timeout: 15000 });
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('reddit');
-  await expect(tooltip).toContainText('lucky discovery');
+  // Definition comes from the real background `trans` fetch (intercepted), so
+  // allow for the worker cold-start + fetch on top of the hover delay.
+  await expect(tooltip).toContainText('lucky discovery', {
+    timeout: 15000,
+  });
 
   await h.close();
 });

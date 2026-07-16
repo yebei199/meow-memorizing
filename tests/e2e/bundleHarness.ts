@@ -133,10 +133,15 @@ export async function setupBundleHarness(
   const context = await chromium.launchPersistentContext(
     userDir,
     {
+      // headless:false makes Playwright launch the full Chromium (not the
+      // headless_shell, which can't load extensions); --headless=new then runs
+      // it in Chrome's new headless mode — no visible window, no focus stealing,
+      // extensions still supported.
       headless: false,
       executablePath: chromiumBinary(),
       ...(opts.viewport ? { viewport: opts.viewport } : {}),
       args: [
+        '--headless=new',
         `--disable-extensions-except=${EXT_DIR}`,
         `--load-extension=${EXT_DIR}`,
       ],
