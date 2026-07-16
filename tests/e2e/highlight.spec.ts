@@ -8,10 +8,8 @@
 import { expect, test } from '@playwright/test';
 import { setupBundleHarness } from './bundleHarness';
 
-test('highlights a stored word on the page', async ({
-  browser,
-}) => {
-  const h = await setupBundleHarness(browser, {
+test('highlights a stored word on the page', async () => {
+  const h = await setupBundleHarness({
     url: 'http://127.0.0.1:5199/sample.html',
     seedWords: {
       hello: {

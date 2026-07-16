@@ -22,10 +22,8 @@ import {
 const GITHUB_LIKE_CSP =
   "script-src 'self' 'unsafe-inline'; object-src 'self'";
 
-test('a selected word highlights page-wide under a strict (no wasm-unsafe-eval) CSP', async ({
-  browser,
-}) => {
-  const h = await setupBundleHarness(browser, {
+test('a selected word highlights page-wide under a strict (no wasm-unsafe-eval) CSP', async () => {
+  const h = await setupBundleHarness({
     url: 'http://127.0.0.1:5199/github-trending.html',
     csp: GITHUB_LIKE_CSP,
   });
