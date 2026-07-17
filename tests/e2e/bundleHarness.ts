@@ -194,19 +194,24 @@ export async function setupBundleHarness(
 
   if (opts.seedWords) {
     await worker.evaluate((seed) => {
-      // chrome.storage.sync backs WXT's `sync:myWords` item.
+      // One local key per word (`word:<w>`), matching storageManager's layout —
+      // the whole book no longer lives in a single quota-capped sync item.
       const c = (
         globalThis as unknown as {
           chrome: {
             storage: {
-              sync: {
+              local: {
                 set(v: unknown): Promise<void>;
               };
             };
           };
         }
       ).chrome;
-      return c.storage.sync.set({ myWords: seed });
+      const items: Record<string, unknown> = {};
+      for (const entry of Object.values(seed)) {
+        items[`word:${entry.word.toLowerCase()}`] = entry;
+      }
+      return c.storage.local.set(items);
     }, opts.seedWords);
     // Re-scan with the seeded words now present (the first scan saw none).
     await page.reload({ waitUntil: 'load' });

@@ -19,7 +19,9 @@ export default defineConfig({
   targetBrowsers: ['chrome', 'firefox'],
   manifest: {
     description: '记单词的小插件',
-    permissions: ['storage'],
+    // unlimitedStorage:词库一词一条存在 local 区,10MB 默认上限约合 7 万词,
+    // 按 5 万词的设计目标没有余量(尤其将来若缓存释义),故显式解除上限。
+    permissions: ['storage', 'unlimitedStorage'],
     content_security_policy: {
       extension_pages:
         "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",

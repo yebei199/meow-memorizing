@@ -19,3 +19,13 @@ export async function findMatchingWords(
 ): Promise<IWordMatch[]> {
   return sendMessage('matcherFindMatches', { text });
 }
+
+/**
+ * Make the worker reload its word set before the finds that follow.
+ * Await this after changing the vocabulary and before rescanning — see the
+ * `matcherReloadWords` note in core/messaging.ts for why the storage change
+ * event alone is not enough.
+ */
+export async function reloadMatcherWords(): Promise<void> {
+  await sendMessage('matcherReloadWords', undefined);
+}

@@ -1,44 +1,10 @@
-import { defineExtensionStorage } from '@webext-core/storage';
-import { browser } from 'wxt/browser';
-
-export interface IWordStorage {
-  word: string;
-  definition?: string;
-  example?: string;
-  isDeleted: boolean;
-  queryTimes: number;
-  deleteTimes: number;
-}
-export interface IAllWordsStorage {
-  [key: string]: IWordStorage;
-}
-
-export interface ExtensionStorageSchema {
-  myWords: IAllWordsStorage;
-  // 网站主题模式，true表示深色模式，false表示浅色模式
-  isWebsiteDarkMode: boolean;
-}
-
-// utils/storage.ts
-export const myWords = storage.defineItem<IAllWordsStorage>(
-  'sync:myWords',
-  {
-    fallback: {},
-  },
-);
-
-// 网站主题模式存储
-export const isWebsiteDarkMode =
-  storage.defineItem<boolean>('local:isWebsiteDarkMode', {
-    fallback: false,
-  });
-
-export const extensionStorage =
-  defineExtensionStorage<ExtensionStorageSchema>(
-    browser.storage.sync,
-  );
-
+// 历史入口:只做重新导出。词库存储与类型的唯一定义在 core/ 下,这里曾经
+// 重复声明过一份(含指向已废弃 sync:myWords 的 defineItem 与缺少三态字段的
+// IWordStorage),留着只会让下一个改存储的人改错地方。
 export { onMessage, sendMessage } from './core/messaging';
-// 从新核心模块重新导出所有内容
 export * from './core/storageManager';
-export type { IWordQuery } from './core/types';
+export type {
+  IAllWordsStorage,
+  IWordQuery,
+  IWordStorage,
+} from './core/types';

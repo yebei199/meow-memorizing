@@ -12,13 +12,18 @@ and selection handling live in `src/content-scripts`.
   never-translate), `isUntranslatable` (system-detected, no dictionary entry,
   paired with `lastAttemptAt` for cooldown retry) — documented in `CONTEXT.md`
   at the repo root and `docs/adr/0001-split-word-lifecycle-states.md`.
-- `storageManager.ts` — thin wrapper over WXT's `storage.defineItem` /
-  `@webext-core/storage` for the `myWords` and `isWebsiteDarkMode` extension
-  storage items. Owns the only read/write path (`queryWord`/`addWordLocal`) to
-  the word list; every other module reaches storage through these two
-  functions rather than touching `storage`/`browser.storage` directly. The
-  background worker also reads `myWords` here (and `myWords.watch`es it) to
-  rehydrate its matcher automata, see `docs/adr/0002-worker-owns-word-set.md`.
+- `storageManager.ts` — the vocabulary's only read/write path
+  (`queryWord`/`addWordLocal`/`getWordsList`); every other module reaches
+  storage through these rather than touching `storage`/`browser.storage`
+  directly. Words live in the **local** area, **one key per word**
+  (`local:word:<word>`): the whole book used to sit in a single `sync:myWords`
+  item, but `chrome.storage.sync` caps one item at 8192 bytes, so ~54 words in
+  every write started throwing `kQuotaBytesPerItem` and the selection flow died
+  silently — see `docs/adr/0004-per-word-local-storage.md`, which also carries
+  the measured numbers behind the per-key shape. `migrateLegacySyncWords()`
+  moves an old sync blob over, once, on worker cold start. The background worker
+  reads the assembled list here (and `watchWords` for live changes) to rehydrate
+  its matcher automata, see `docs/adr/0002-worker-owns-word-set.md`.
 - `wordSets.ts` — pure `activeWords`/`isExcluded`: the three-flag exclusion
   union (`isDeleted`/`isIgnored`/`isUntranslatable`) that decides which words
   the worker feeds to the highlight automaton. The single home for that logic,
@@ -35,11 +40,15 @@ and selection handling live in `src/content-scripts`.
   cooling-down untranslatable word). Also holds `filterWord` (selection
   validity check) and `delay`.
 - `messaging.ts` — the typed `@webext-core/messaging` protocol
-  (`trans`/`matcherFindMatches`) between content scripts and the background
-  worker, needed because the WASM matcher can only run in the worker's
-  extension-page CSP context, not a content script's page-inherited CSP. The
-  worker owns its word set, so there is no word-set push message — the content
-  script only sends finds.
+  (`trans`/`matcherFindMatches`/`matcherReloadWords`) between content scripts
+  and the background worker, needed because the WASM matcher can only run in the
+  worker's extension-page CSP context, not a content script's page-inherited
+  CSP. The worker owns its word set, so there is no word-set push message — the
+  content script sends text and gets matches. `matcherReloadWords` is the
+  ordered barrier a content script awaits after changing the vocabulary: the
+  storage change event reaches the worker on a different IPC path than the
+  write's ack reaches the page, so a rescan can otherwise beat the rebuild and
+  miss the just-added word for good (`docs/adr/0004-per-word-local-storage.md`).
 - `themeDetector.ts` — best-effort light/dark detection for the host page
   (media query, CSS class heuristics, background-color luminance) plus a
   `MutationObserver`-driven sync of the result into `isWebsiteDarkMode`

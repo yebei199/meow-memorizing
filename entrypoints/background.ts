@@ -2,7 +2,8 @@ import axios from 'axios';
 import { onMessage } from '@/src/core/messaging';
 import {
   getWordsList,
-  myWords,
+  migrateLegacySyncWords,
+  watchWords,
 } from '@/src/core/storageManager';
 import { activeWords } from '@/src/core/wordSets';
 import { ensureMatcher } from '@/src/wasm/matcherLoader';
@@ -42,10 +43,8 @@ export default defineBackground({
     // docs/adr/0002-worker-owns-word-set.md).
     let ready: Promise<void> | null = null;
 
-    const rebuild = (
-      list: IAllWordsStorageOrNull,
-    ): void => {
-      ensureMatcher().setWords(activeWords(list ?? {}));
+    const rebuild = (list: IAllWordsStorage): void => {
+      ensureMatcher().setWords(activeWords(list));
     };
 
     const ensureWordsLoaded = (): Promise<void> => {
@@ -53,7 +52,11 @@ export default defineBackground({
         // If the cold-start load rejects, clear `ready` so the next find
         // retries instead of permanently reusing the rejected promise (which
         // would kill matching for the worker's whole lifetime).
-        const attempt = getWordsList().then(rebuild);
+        // The one-off sync→local migration runs first, so a just-upgraded user
+        // still matches on their existing vocabulary from the very first find.
+        const attempt = migrateLegacySyncWords()
+          .then(getWordsList)
+          .then(rebuild);
         const retryable = attempt.catch((error) => {
           if (ready === retryable) ready = null;
           throw error;
@@ -65,9 +68,16 @@ export default defineBackground({
 
     // Rebuild live while the worker is awake; storage changes don't wake a
     // sleeping worker, but the next find will cold-load fresh words anyway.
-    myWords.watch((list) => {
+    watchWords((list) => {
       rebuild(list);
       ready = Promise.resolve();
+    });
+
+    // A content script that just changed the vocabulary awaits this before
+    // rescanning, so the rescan can't race the storage.onChanged rebuild.
+    onMessage('matcherReloadWords', async () => {
+      ready = null;
+      await ensureWordsLoaded();
     });
 
     onMessage('matcherFindMatches', async ({ data }) => {
@@ -77,7 +87,6 @@ export default defineBackground({
   },
 });
 
-// Local alias: myWords.watch hands back the stored value or null.
-type IAllWordsStorageOrNull = Awaited<
+type IAllWordsStorage = Awaited<
   ReturnType<typeof getWordsList>
-> | null;
+>;

@@ -24,7 +24,10 @@ translation-card rendering stays in `src/components/transline`.
   split now lives in `src/core/wordSets.ts` (`activeWords`/`isExcluded`, the
   three-flag union of `isDeleted`/`isIgnored`/`isUntranslatable` — see
   `CONTEXT.md` and `docs/adr/0001-split-word-lifecycle-states.md`), read by the
-  worker.
+  worker. It also exposes `reloadMatcherWords`, which `processPageWords` awaits
+  before a full rescan so the worker's word set is current — the storage change
+  event alone is not ordered against the page's own write
+  (`docs/adr/0004-per-word-local-storage.md`).
 - `AddButton.tsx` — the `mouseup` selection listener: normalizes and validates
   the selected text, records it via `wordProcessor.addQueriedWord`, then
   consults `wordProcessor.decideSelectionAction` on the word's lifecycle
