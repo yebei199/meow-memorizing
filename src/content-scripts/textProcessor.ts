@@ -3,7 +3,10 @@ import {
   processTextNode,
   resetProcessedTextNodes,
 } from './domUtils';
-import { findMatchingWords } from './matcherFacade';
+import {
+  findMatchingWords,
+  reloadMatcherWords,
+} from './matcherFacade';
 
 /**
  * 处理页面中的单词。词表由后台 worker 自己从 storage 持有（见
@@ -12,6 +15,12 @@ import { findMatchingWords } from './matcherFacade';
  */
 export async function processPageWords(): Promise<void> {
   try {
+    // 整页扫描的调用方几乎都是刚改完词库（选词入库、取消停用），而后台收到
+    // storage.onChanged 与这里拿到写入 ack 走的是两条 IPC，没有顺序保证。
+    // 整页只扫这一次，抢输了刚加的词就永远不高亮（词表越大越必现），
+    // 所以先挡一道，让 worker 把词表读新。
+    await reloadMatcherWords();
+
     // Full-page rescans must revisit existing text nodes after the word list changes.
     resetProcessedTextNodes();
 

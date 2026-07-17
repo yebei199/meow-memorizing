@@ -13,6 +13,14 @@ interface ProtocolMap {
   trans(data: IWordQuery): string;
   // Active-word matches for a text chunk.
   matcherFindMatches(data: { text: string }): IWordMatch[];
+  // The vocabulary just changed: reload the worker's word set before answering
+  // any further find. Storage's `onChanged` reaches the worker on a different
+  // IPC path than the write's ack reaches the content script, so a rescan that
+  // fires right after a write can beat the rebuild and miss the new word —
+  // permanently, since a full-page scan only runs once. Messages from one
+  // content script are ordered, so awaiting this is the barrier that guarantees
+  // the following finds see the new word.
+  matcherReloadWords(): void;
 }
 
 export const { sendMessage, onMessage } =

@@ -49,7 +49,17 @@ export async function setupSelectionListener(): Promise<void> {
     // 不清空原生选区：用户经常就是想选中之后复制文本，见 #140 讨论。
     const rect = range.getBoundingClientRect();
 
-    await addQueriedWord(word);
+    // 记录单词是尽力而为:翻译不依赖写入,所以词库写满(local 区 10MB 上限,
+    // 见 docs/adr/0005)或任何存储故障都只能让「保存」失败,不能连累「翻译」。
+    // 早先这里没有兜底,写入抛错会让整个 mouseup 监听器静默中断——选中任何词
+    // 都不翻译也不高亮,而已有下划线因为只依赖读取照常显示,这个半死不活的
+    // 表象极难诊断(见 docs/adr/0004)。卡片会照实显示「未收录」,不必特殊处理。
+    await addQueriedWord(word).catch((error) => {
+      console.error(
+        '记录单词失败,仅显示翻译(词库可能已满):',
+        error,
+      );
+    });
     await processPageWords();
 
     const position = {
